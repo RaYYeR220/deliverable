@@ -1,0 +1,89 @@
+{
+  "taken_at": "2026-09-22T08:11:08.257642+00:00",
+  "gap_seconds": 90,
+  "oracle_account": "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH",
+  "oracle_program": "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+  "dex_price_source": "jup.ag price v3",
+  "rows": [
+    {
+      "symbol": "AAPLx",
+      "oracle_price": 340.09816256087316,
+      "oracle_price_moved": 0.0,
+      "oracle_ts_advanced_s": 84,
+      "oracle_slot_advanced": 315,
+      "oracle_reported_age_s": 48,
+      "dex_price": 338.23459960601036,
+      "basis_bps": -54.8
+    },
+    {
+      "symbol": "NVDAx",
+      "oracle_price": 227.71172456280414,
+      "oracle_price_moved": 0.0,
+      "oracle_ts_advanced_s": 84,
+      "oracle_slot_advanced": 315,
+      "oracle_reported_age_s": 48,
+      "dex_price": 226.3548013060702,
+      "basis_bps": -59.6
+    },
+    {
+      "symbol": "SPYx",
+      "oracle_price": 777.12733215,
+      "oracle_price_moved": -0.0088854,
+      "oracle_ts_advanced_s": 85,
+      "oracle_slot_advanced": 315,
+      "oracle_reported_age_s": 39,
+      "dex_price": 772.6887266986654,
+      "basis_bps": -57.1
+    },
+    {
+      "symbol": "QQQx",
+      "oracle_price": 742.67430604,
+      "oracle_price_moved": -0.03892342,
+      "oracle_ts_advanced_s": 85,
+      "oracle_slot_advanced": 315,
+      "oracle_reported_age_s": 39,
+      "dex_price": 740.4859498747134,
+      "basis_bps": -29.5
+    },
+    {
+      "symbol": "METAx",
+      "oracle_price": 747.24349323,
+      "oracle_price_moved": 0.5611603,
+      "oracle_ts_advanced_s": 84,
+      "oracle_slot_advanced": 315,
+      "oracle_reported_age_s": 48,
+      "dex_price": 745.7180233720429,
+      "basis_bps": -20.4
+    },
+    {
+      "symbol": "CRCLx",
+      "oracle_price": 94.47,
+      "oracle_price_moved": 0.0,
+      "oracle_ts_advanced_s": 84,
+      "oracle_slot_advanced": 315,
+      "oracle_reported_age_s": 48,
+      "dex_price": 91.40927191930952,
+      "basis_bps": -324.0
+    },
+    {
+      "symbol": "HOODx",
+      "oracle_price": 123.3,
+      "oracle_price_moved": 0.0,
+      "oracle_ts_advanced_s": 84,
+      "oracle_slot_advanced": 315,
+      "oracle_reported_age_s": 48,
+      "dex_price": 120.39388647453985,
+      "basis_bps": -235.7
+    },
+    {
+      "symbol": "COINx",
+      "oracle_price": 200.985,
+      "oracle_price_moved": 0.0,
+      "oracle_ts_advanced_s": 85,
+      "oracle_slot_advanced": 315,
+      "oracle_reported_age_s": 39,
+      "dex_price": 195.59217844635313,
+      "basis_bps": -268.3
+    }
+  ]
+}
