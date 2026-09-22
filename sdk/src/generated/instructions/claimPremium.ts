@@ -40,7 +40,12 @@ import {
   type ResolvedInstructionAccount,
   type ResolvedInstructionAccountMeta,
 } from "@solana/kit/program-client-core";
-import { findPositionPda, findPremiumVaultPda } from "../pdas/index.js";
+import {
+  findPositionPda,
+  findPremiumVaultPda,
+  findRegistryPda,
+  findSecurityPda,
+} from "../pdas/index.js";
 import { DELIVERABLE_PROGRAM_ADDRESS } from "../programs/index.js";
 
 export const CLAIM_PREMIUM_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
@@ -56,11 +61,16 @@ export function getClaimPremiumDiscriminatorBytes(): ReadonlyUint8Array {
 export type ClaimPremiumInstruction<
   TProgram extends string = typeof DELIVERABLE_PROGRAM_ADDRESS,
   TAccountWriter extends string | AccountMeta<string> = string,
+  TAccountRegistry extends string | AccountMeta<string> = string,
+  TAccountSecurity extends string | AccountMeta<string> = string,
+  TAccountCalendar extends string | AccountMeta<string> = string,
   TAccountSeries extends string | AccountMeta<string> = string,
   TAccountPosition extends string | AccountMeta<string> = string,
   TAccountUnderlyingMint extends string | AccountMeta<string> = string,
   TAccountPremiumVault extends string | AccountMeta<string> = string,
   TAccountWriterUnderlying extends string | AccountMeta<string> = string,
+  TAccountPrimaryOracle extends string | AccountMeta<string> = string,
+  TAccountSecondaryOracle extends string | AccountMeta<string> = string,
   TAccountUnderlyingTokenProgram extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
@@ -71,6 +81,15 @@ export type ClaimPremiumInstruction<
         ? ReadonlySignerAccount<TAccountWriter> &
             AccountSignerMeta<TAccountWriter>
         : TAccountWriter,
+      TAccountRegistry extends string
+        ? ReadonlyAccount<TAccountRegistry>
+        : TAccountRegistry,
+      TAccountSecurity extends string
+        ? ReadonlyAccount<TAccountSecurity>
+        : TAccountSecurity,
+      TAccountCalendar extends string
+        ? ReadonlyAccount<TAccountCalendar>
+        : TAccountCalendar,
       TAccountSeries extends string
         ? WritableAccount<TAccountSeries>
         : TAccountSeries,
@@ -86,6 +105,12 @@ export type ClaimPremiumInstruction<
       TAccountWriterUnderlying extends string
         ? WritableAccount<TAccountWriterUnderlying>
         : TAccountWriterUnderlying,
+      TAccountPrimaryOracle extends string
+        ? ReadonlyAccount<TAccountPrimaryOracle>
+        : TAccountPrimaryOracle,
+      TAccountSecondaryOracle extends string
+        ? ReadonlyAccount<TAccountSecondaryOracle>
+        : TAccountSecondaryOracle,
       TAccountUnderlyingTokenProgram extends string
         ? ReadonlyAccount<TAccountUnderlyingTokenProgram>
         : TAccountUnderlyingTokenProgram,
@@ -122,6 +147,9 @@ export function getClaimPremiumInstructionDataCodec(): FixedSizeCodec<
 
 export type ClaimPremiumAsyncInput<
   TAccountWriter extends InstructionSignerInput = InstructionSignerInput,
+  TAccountRegistry extends InstructionAccountInput = InstructionAccountInput,
+  TAccountSecurity extends InstructionAccountInput = InstructionAccountInput,
+  TAccountCalendar extends InstructionAccountInput = InstructionAccountInput,
   TAccountSeries extends InstructionAccountInput = InstructionAccountInput,
   TAccountPosition extends InstructionAccountInput = InstructionAccountInput,
   TAccountUnderlyingMint extends InstructionAccountInput =
@@ -130,35 +158,63 @@ export type ClaimPremiumAsyncInput<
     InstructionAccountInput,
   TAccountWriterUnderlying extends InstructionAccountInput =
     InstructionAccountInput,
+  TAccountPrimaryOracle extends InstructionAccountInput =
+    InstructionAccountInput,
+  TAccountSecondaryOracle extends InstructionAccountInput =
+    InstructionAccountInput,
   TAccountUnderlyingTokenProgram extends InstructionAccountInput =
     InstructionAccountInput,
 > = {
   writer: TAccountWriter;
+  /**
+   * Claiming premium moves the underlying share — the same asset as the
+   * collateral — out of a series-owned vault, so it takes the same gate and
+   * the same kill switch every other value-moving path takes. It used to
+   * take neither, which made "set it and every gated action refuses" false
+   * of the one instruction that could empty a vault while the venue was
+   * paused, the market shut and a hook attached.
+   */
+  registry?: TAccountRegistry;
+  security?: TAccountSecurity;
+  calendar: TAccountCalendar;
   series: TAccountSeries;
   position?: TAccountPosition;
   underlyingMint: TAccountUnderlyingMint;
   premiumVault?: TAccountPremiumVault;
   writerUnderlying: TAccountWriterUnderlying;
+  /** registered with, which binds the account by address as well as by owner. */
+  primaryOracle: TAccountPrimaryOracle;
+  secondaryOracle: TAccountSecondaryOracle;
   underlyingTokenProgram: TAccountUnderlyingTokenProgram;
 };
 
 export async function getClaimPremiumInstructionAsync<
   TAccountWriter extends InstructionSignerInput,
+  TAccountRegistry extends InstructionAccountInput,
+  TAccountSecurity extends InstructionAccountInput,
+  TAccountCalendar extends InstructionAccountInput,
   TAccountSeries extends InstructionAccountInput,
   TAccountPosition extends InstructionAccountInput,
   TAccountUnderlyingMint extends InstructionAccountInput,
   TAccountPremiumVault extends InstructionAccountInput,
   TAccountWriterUnderlying extends InstructionAccountInput,
+  TAccountPrimaryOracle extends InstructionAccountInput,
+  TAccountSecondaryOracle extends InstructionAccountInput,
   TAccountUnderlyingTokenProgram extends InstructionAccountInput,
   TProgramAddress extends Address = typeof DELIVERABLE_PROGRAM_ADDRESS,
 >(
   input: ClaimPremiumAsyncInput<
     TAccountWriter,
+    TAccountRegistry,
+    TAccountSecurity,
+    TAccountCalendar,
     TAccountSeries,
     TAccountPosition,
     TAccountUnderlyingMint,
     TAccountPremiumVault,
     TAccountWriterUnderlying,
+    TAccountPrimaryOracle,
+    TAccountSecondaryOracle,
     TAccountUnderlyingTokenProgram
   >,
   config?: { programAddress?: TProgramAddress },
@@ -168,6 +224,18 @@ export async function getClaimPremiumInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountWriter,
       InstructionAccountInputAddress<TAccountWriter>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountRegistry,
+      InstructionAccountInputAddress<TAccountRegistry>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountSecurity,
+      InstructionAccountInputAddress<TAccountSecurity>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountCalendar,
+      InstructionAccountInputAddress<TAccountCalendar>
     >,
     ResolvedInstructionAccountMeta<
       TAccountSeries,
@@ -190,6 +258,14 @@ export async function getClaimPremiumInstructionAsync<
       InstructionAccountInputAddress<TAccountWriterUnderlying>
     >,
     ResolvedInstructionAccountMeta<
+      TAccountPrimaryOracle,
+      InstructionAccountInputAddress<TAccountPrimaryOracle>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountSecondaryOracle,
+      InstructionAccountInputAddress<TAccountSecondaryOracle>
+    >,
+    ResolvedInstructionAccountMeta<
       TAccountUnderlyingTokenProgram,
       InstructionAccountInputAddress<TAccountUnderlyingTokenProgram>
     >
@@ -204,6 +280,21 @@ export async function getClaimPremiumInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     writer: { value: input.writer ?? null, isSigner: true, isWritable: false },
+    registry: {
+      value: input.registry ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
+    security: {
+      value: input.security ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
+    calendar: {
+      value: input.calendar ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
     series: { value: input.series ?? null, isSigner: false, isWritable: true },
     position: {
       value: input.position ?? null,
@@ -225,6 +316,16 @@ export async function getClaimPremiumInstructionAsync<
       isSigner: false,
       isWritable: true,
     },
+    primaryOracle: {
+      value: input.primaryOracle ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
+    secondaryOracle: {
+      value: input.secondaryOracle ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
     underlyingTokenProgram: {
       value: input.underlyingTokenProgram ?? null,
       isSigner: false,
@@ -237,6 +338,20 @@ export async function getClaimPremiumInstructionAsync<
   >;
 
   // Resolve default values.
+  if (!accounts.registry.value) {
+    accounts.registry.value = await findRegistryPda({ programAddress });
+  }
+  if (!accounts.security.value) {
+    accounts.security.value = await findSecurityPda(
+      {
+        underlyingMint: getAddressFromResolvedInstructionAccount(
+          "underlyingMint",
+          accounts.underlyingMint.value,
+        ),
+      },
+      { programAddress },
+    );
+  }
   if (!accounts.position.value) {
     accounts.position.value = await findPositionPda(
       {
@@ -267,11 +382,16 @@ export async function getClaimPremiumInstructionAsync<
   return Object.freeze({
     accounts: [
       getAccountMeta("writer", accounts.writer),
+      getAccountMeta("registry", accounts.registry),
+      getAccountMeta("security", accounts.security),
+      getAccountMeta("calendar", accounts.calendar),
       getAccountMeta("series", accounts.series),
       getAccountMeta("position", accounts.position),
       getAccountMeta("underlyingMint", accounts.underlyingMint),
       getAccountMeta("premiumVault", accounts.premiumVault),
       getAccountMeta("writerUnderlying", accounts.writerUnderlying),
+      getAccountMeta("primaryOracle", accounts.primaryOracle),
+      getAccountMeta("secondaryOracle", accounts.secondaryOracle),
       getAccountMeta("underlyingTokenProgram", accounts.underlyingTokenProgram),
     ],
     data: getClaimPremiumInstructionDataEncoder().encode({}),
@@ -281,6 +401,18 @@ export async function getClaimPremiumInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountWriter,
       InstructionAccountInputAddress<TAccountWriter>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountRegistry,
+      InstructionAccountInputAddress<TAccountRegistry>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountSecurity,
+      InstructionAccountInputAddress<TAccountSecurity>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountCalendar,
+      InstructionAccountInputAddress<TAccountCalendar>
     >,
     ResolvedInstructionAccountMeta<
       TAccountSeries,
@@ -303,6 +435,14 @@ export async function getClaimPremiumInstructionAsync<
       InstructionAccountInputAddress<TAccountWriterUnderlying>
     >,
     ResolvedInstructionAccountMeta<
+      TAccountPrimaryOracle,
+      InstructionAccountInputAddress<TAccountPrimaryOracle>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountSecondaryOracle,
+      InstructionAccountInputAddress<TAccountSecondaryOracle>
+    >,
+    ResolvedInstructionAccountMeta<
       TAccountUnderlyingTokenProgram,
       InstructionAccountInputAddress<TAccountUnderlyingTokenProgram>
     >
@@ -311,6 +451,9 @@ export async function getClaimPremiumInstructionAsync<
 
 export type ClaimPremiumInput<
   TAccountWriter extends InstructionSignerInput = InstructionSignerInput,
+  TAccountRegistry extends InstructionAccountInput = InstructionAccountInput,
+  TAccountSecurity extends InstructionAccountInput = InstructionAccountInput,
+  TAccountCalendar extends InstructionAccountInput = InstructionAccountInput,
   TAccountSeries extends InstructionAccountInput = InstructionAccountInput,
   TAccountPosition extends InstructionAccountInput = InstructionAccountInput,
   TAccountUnderlyingMint extends InstructionAccountInput =
@@ -319,35 +462,63 @@ export type ClaimPremiumInput<
     InstructionAccountInput,
   TAccountWriterUnderlying extends InstructionAccountInput =
     InstructionAccountInput,
+  TAccountPrimaryOracle extends InstructionAccountInput =
+    InstructionAccountInput,
+  TAccountSecondaryOracle extends InstructionAccountInput =
+    InstructionAccountInput,
   TAccountUnderlyingTokenProgram extends InstructionAccountInput =
     InstructionAccountInput,
 > = {
   writer: TAccountWriter;
+  /**
+   * Claiming premium moves the underlying share — the same asset as the
+   * collateral — out of a series-owned vault, so it takes the same gate and
+   * the same kill switch every other value-moving path takes. It used to
+   * take neither, which made "set it and every gated action refuses" false
+   * of the one instruction that could empty a vault while the venue was
+   * paused, the market shut and a hook attached.
+   */
+  registry: TAccountRegistry;
+  security: TAccountSecurity;
+  calendar: TAccountCalendar;
   series: TAccountSeries;
   position: TAccountPosition;
   underlyingMint: TAccountUnderlyingMint;
   premiumVault: TAccountPremiumVault;
   writerUnderlying: TAccountWriterUnderlying;
+  /** registered with, which binds the account by address as well as by owner. */
+  primaryOracle: TAccountPrimaryOracle;
+  secondaryOracle: TAccountSecondaryOracle;
   underlyingTokenProgram: TAccountUnderlyingTokenProgram;
 };
 
 export function getClaimPremiumInstruction<
   TAccountWriter extends InstructionSignerInput,
+  TAccountRegistry extends InstructionAccountInput,
+  TAccountSecurity extends InstructionAccountInput,
+  TAccountCalendar extends InstructionAccountInput,
   TAccountSeries extends InstructionAccountInput,
   TAccountPosition extends InstructionAccountInput,
   TAccountUnderlyingMint extends InstructionAccountInput,
   TAccountPremiumVault extends InstructionAccountInput,
   TAccountWriterUnderlying extends InstructionAccountInput,
+  TAccountPrimaryOracle extends InstructionAccountInput,
+  TAccountSecondaryOracle extends InstructionAccountInput,
   TAccountUnderlyingTokenProgram extends InstructionAccountInput,
   TProgramAddress extends Address = typeof DELIVERABLE_PROGRAM_ADDRESS,
 >(
   input: ClaimPremiumInput<
     TAccountWriter,
+    TAccountRegistry,
+    TAccountSecurity,
+    TAccountCalendar,
     TAccountSeries,
     TAccountPosition,
     TAccountUnderlyingMint,
     TAccountPremiumVault,
     TAccountWriterUnderlying,
+    TAccountPrimaryOracle,
+    TAccountSecondaryOracle,
     TAccountUnderlyingTokenProgram
   >,
   config?: { programAddress?: TProgramAddress },
@@ -356,6 +527,18 @@ export function getClaimPremiumInstruction<
   ResolvedInstructionAccountMeta<
     TAccountWriter,
     InstructionAccountInputAddress<TAccountWriter>
+  >,
+  ResolvedInstructionAccountMeta<
+    TAccountRegistry,
+    InstructionAccountInputAddress<TAccountRegistry>
+  >,
+  ResolvedInstructionAccountMeta<
+    TAccountSecurity,
+    InstructionAccountInputAddress<TAccountSecurity>
+  >,
+  ResolvedInstructionAccountMeta<
+    TAccountCalendar,
+    InstructionAccountInputAddress<TAccountCalendar>
   >,
   ResolvedInstructionAccountMeta<
     TAccountSeries,
@@ -378,6 +561,14 @@ export function getClaimPremiumInstruction<
     InstructionAccountInputAddress<TAccountWriterUnderlying>
   >,
   ResolvedInstructionAccountMeta<
+    TAccountPrimaryOracle,
+    InstructionAccountInputAddress<TAccountPrimaryOracle>
+  >,
+  ResolvedInstructionAccountMeta<
+    TAccountSecondaryOracle,
+    InstructionAccountInputAddress<TAccountSecondaryOracle>
+  >,
+  ResolvedInstructionAccountMeta<
     TAccountUnderlyingTokenProgram,
     InstructionAccountInputAddress<TAccountUnderlyingTokenProgram>
   >
@@ -391,6 +582,21 @@ export function getClaimPremiumInstruction<
   // Original accounts.
   const originalAccounts = {
     writer: { value: input.writer ?? null, isSigner: true, isWritable: false },
+    registry: {
+      value: input.registry ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
+    security: {
+      value: input.security ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
+    calendar: {
+      value: input.calendar ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
     series: { value: input.series ?? null, isSigner: false, isWritable: true },
     position: {
       value: input.position ?? null,
@@ -412,6 +618,16 @@ export function getClaimPremiumInstruction<
       isSigner: false,
       isWritable: true,
     },
+    primaryOracle: {
+      value: input.primaryOracle ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
+    secondaryOracle: {
+      value: input.secondaryOracle ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
     underlyingTokenProgram: {
       value: input.underlyingTokenProgram ?? null,
       isSigner: false,
@@ -426,11 +642,16 @@ export function getClaimPremiumInstruction<
   return Object.freeze({
     accounts: [
       getAccountMeta("writer", accounts.writer),
+      getAccountMeta("registry", accounts.registry),
+      getAccountMeta("security", accounts.security),
+      getAccountMeta("calendar", accounts.calendar),
       getAccountMeta("series", accounts.series),
       getAccountMeta("position", accounts.position),
       getAccountMeta("underlyingMint", accounts.underlyingMint),
       getAccountMeta("premiumVault", accounts.premiumVault),
       getAccountMeta("writerUnderlying", accounts.writerUnderlying),
+      getAccountMeta("primaryOracle", accounts.primaryOracle),
+      getAccountMeta("secondaryOracle", accounts.secondaryOracle),
       getAccountMeta("underlyingTokenProgram", accounts.underlyingTokenProgram),
     ],
     data: getClaimPremiumInstructionDataEncoder().encode({}),
@@ -440,6 +661,18 @@ export function getClaimPremiumInstruction<
     ResolvedInstructionAccountMeta<
       TAccountWriter,
       InstructionAccountInputAddress<TAccountWriter>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountRegistry,
+      InstructionAccountInputAddress<TAccountRegistry>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountSecurity,
+      InstructionAccountInputAddress<TAccountSecurity>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountCalendar,
+      InstructionAccountInputAddress<TAccountCalendar>
     >,
     ResolvedInstructionAccountMeta<
       TAccountSeries,
@@ -462,6 +695,14 @@ export function getClaimPremiumInstruction<
       InstructionAccountInputAddress<TAccountWriterUnderlying>
     >,
     ResolvedInstructionAccountMeta<
+      TAccountPrimaryOracle,
+      InstructionAccountInputAddress<TAccountPrimaryOracle>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountSecondaryOracle,
+      InstructionAccountInputAddress<TAccountSecondaryOracle>
+    >,
+    ResolvedInstructionAccountMeta<
       TAccountUnderlyingTokenProgram,
       InstructionAccountInputAddress<TAccountUnderlyingTokenProgram>
     >
@@ -475,12 +716,26 @@ export type ParsedClaimPremiumInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     writer: TAccountMetas[0];
-    series: TAccountMetas[1];
-    position: TAccountMetas[2];
-    underlyingMint: TAccountMetas[3];
-    premiumVault: TAccountMetas[4];
-    writerUnderlying: TAccountMetas[5];
-    underlyingTokenProgram: TAccountMetas[6];
+    /**
+     * Claiming premium moves the underlying share — the same asset as the
+     * collateral — out of a series-owned vault, so it takes the same gate and
+     * the same kill switch every other value-moving path takes. It used to
+     * take neither, which made "set it and every gated action refuses" false
+     * of the one instruction that could empty a vault while the venue was
+     * paused, the market shut and a hook attached.
+     */
+    registry: TAccountMetas[1];
+    security: TAccountMetas[2];
+    calendar: TAccountMetas[3];
+    series: TAccountMetas[4];
+    position: TAccountMetas[5];
+    underlyingMint: TAccountMetas[6];
+    premiumVault: TAccountMetas[7];
+    writerUnderlying: TAccountMetas[8];
+    /** registered with, which binds the account by address as well as by owner. */
+    primaryOracle: TAccountMetas[9];
+    secondaryOracle: TAccountMetas[10];
+    underlyingTokenProgram: TAccountMetas[11];
   };
   data: ClaimPremiumInstructionData;
 };
@@ -493,12 +748,12 @@ export function parseClaimPremiumInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedClaimPremiumInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 7) {
+  if (instruction.accounts.length < 12) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 7,
+        expectedAccountMetas: 12,
       },
     );
   }
@@ -512,11 +767,16 @@ export function parseClaimPremiumInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       writer: getNextAccount(),
+      registry: getNextAccount(),
+      security: getNextAccount(),
+      calendar: getNextAccount(),
       series: getNextAccount(),
       position: getNextAccount(),
       underlyingMint: getNextAccount(),
       premiumVault: getNextAccount(),
       writerUnderlying: getNextAccount(),
+      primaryOracle: getNextAccount(),
+      secondaryOracle: getNextAccount(),
       underlyingTokenProgram: getNextAccount(),
     },
     data: getClaimPremiumInstructionDataDecoder().decode(instruction.data),

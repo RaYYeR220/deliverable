@@ -7,6 +7,10 @@
 //! defending against only exist in the real accounts.
 
 mod adjustment_test;
+/// Adversarial audit reproductions, all of them live; see the file header.
+mod audit_test;
+/// Every `#[derive(Accounts)]` struct and the constraints it must carry.
+mod constraints_test;
 mod gate_test;
 mod harness;
 mod oracle_test;

@@ -855,9 +855,9 @@ export type DeliverablePluginInstructions = {
 
 export type DeliverablePluginPdas = {
   registry: typeof findRegistryPda;
+  security: typeof findSecurityPda;
   position: typeof findPositionPda;
   premiumVault: typeof findPremiumVaultPda;
-  security: typeof findSecurityPda;
   optionMint: typeof findOptionMintPda;
   collateralVault: typeof findCollateralVaultPda;
   quoteVault: typeof findQuoteVaultPda;
@@ -973,9 +973,9 @@ export function deliverableProgram() {
         },
         pdas: {
           registry: findRegistryPda,
+          security: findSecurityPda,
           position: findPositionPda,
           premiumVault: findPremiumVaultPda,
-          security: findSecurityPda,
           optionMint: findOptionMintPda,
           collateralVault: findCollateralVaultPda,
           quoteVault: findQuoteVaultPda,

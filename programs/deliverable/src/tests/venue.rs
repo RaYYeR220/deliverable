@@ -213,6 +213,34 @@ fn pda(seeds: &[&[u8]]) -> Pubkey {
     Pubkey::find_program_address(seeds, &crate::ID).0
 }
 
+/// The series PDA, derived the way the program derives it.
+///
+/// Every term a writer is exposed to is in the address, so two different sets
+/// of terms are two different series and the canonical name means what it says.
+#[allow(clippy::too_many_arguments)]
+pub fn series_pda(
+    underlying: Pubkey,
+    quote: Pubkey,
+    expiry_ts: i64,
+    strike0: u64,
+    contract_raw_size: u64,
+    settlement_window_minutes: u16,
+    kind: OptionKind,
+    adjust_on_corporate_action: bool,
+) -> Pubkey {
+    pda(&[
+        SERIES_SEED,
+        underlying.as_ref(),
+        quote.as_ref(),
+        &expiry_ts.to_le_bytes(),
+        &strike0.to_le_bytes(),
+        &contract_raw_size.to_le_bytes(),
+        &settlement_window_minutes.to_le_bytes(),
+        &[kind as u8],
+        &[adjust_on_corporate_action as u8],
+    ])
+}
+
 /// The same 32 bytes, as the program names them.
 pub fn anchor_key(key: SvmPubkey) -> Pubkey {
     Pubkey::new_from_array(key.to_bytes())
@@ -393,13 +421,16 @@ impl Venue {
             &[],
         );
 
-        let series = pda(&[
-            SERIES_SEED,
-            underlying.as_ref(),
-            &config.expiry_ts.to_le_bytes(),
-            &config.strike0.to_le_bytes(),
-            &[OptionKind::Call as u8],
-        ]);
+        let series = series_pda(
+            underlying,
+            Pubkey::new_from_array(USDC_MINT.to_bytes()),
+            config.expiry_ts,
+            config.strike0,
+            config.contract_raw_size,
+            config.settlement_window_minutes,
+            OptionKind::Call,
+            config.adjust_on_corporate_action,
+        );
 
         Venue {
             svm,
@@ -557,6 +588,7 @@ impl Venue {
                 calendar: self.calendar,
                 series: self.series,
                 underlying_mint: self.underlying(),
+                premium_vault: self.premium_vault,
                 option_mint: self.option_mint,
                 collateral_vault: self.collateral_vault,
                 writer_underlying: Pubkey::new_from_array(self.writer_underlying.to_bytes()),
@@ -619,6 +651,7 @@ impl Venue {
         let instruction = ix(
             crate::accounts::SettleExpired {
                 writer: self.writer.pubkey().to_bytes().into(),
+                security: self.security,
                 calendar: self.calendar,
                 series: self.series,
                 position: self.position,
@@ -643,11 +676,16 @@ impl Venue {
         let instruction = ix(
             crate::accounts::ClaimPremium {
                 writer: self.writer.pubkey().to_bytes().into(),
+                registry: self.registry,
+                security: self.security,
+                calendar: self.calendar,
                 series: self.series,
                 position: self.position,
                 underlying_mint: self.underlying(),
                 premium_vault: self.premium_vault,
                 writer_underlying: Pubkey::new_from_array(self.writer_underlying.to_bytes()),
+                primary_oracle: SCOPE_PRICES,
+                secondary_oracle: SCOPE_PRICES,
                 underlying_token_program: Pubkey::new_from_array(TOKEN_2022.to_bytes()),
             },
             crate::instruction::ClaimPremium {},

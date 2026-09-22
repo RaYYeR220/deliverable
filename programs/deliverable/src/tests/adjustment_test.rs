@@ -70,6 +70,9 @@ fn build(
         premium_claimed_total: 0,
         window_opened_ts: 0,
         acknowledged_multiplier: m0,
+        contracts_assigned_total: 0,
+        premium_per_contract_acc: 0,
+        premium_credited_total: 0,
     }
 }
 

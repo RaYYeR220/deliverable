@@ -44,6 +44,7 @@ import {
 } from "@solana/kit/program-client-core";
 import {
   findPositionPda,
+  findPremiumVaultPda,
   findRegistryPda,
   findSecurityPda,
 } from "../pdas/index.js";
@@ -65,6 +66,7 @@ export type WriteInstruction<
   TAccountCalendar extends string | AccountMeta<string> = string,
   TAccountSeries extends string | AccountMeta<string> = string,
   TAccountUnderlyingMint extends string | AccountMeta<string> = string,
+  TAccountPremiumVault extends string | AccountMeta<string> = string,
   TAccountOptionMint extends string | AccountMeta<string> = string,
   TAccountCollateralVault extends string | AccountMeta<string> = string,
   TAccountWriterUnderlying extends string | AccountMeta<string> = string,
@@ -97,6 +99,9 @@ export type WriteInstruction<
       TAccountUnderlyingMint extends string
         ? ReadonlyAccount<TAccountUnderlyingMint>
         : TAccountUnderlyingMint,
+      TAccountPremiumVault extends string
+        ? ReadonlyAccount<TAccountPremiumVault>
+        : TAccountPremiumVault,
       TAccountOptionMint extends string
         ? WritableAccount<TAccountOptionMint>
         : TAccountOptionMint,
@@ -167,6 +172,8 @@ export type WriteAsyncInput<
   TAccountSeries extends InstructionAccountInput = InstructionAccountInput,
   TAccountUnderlyingMint extends InstructionAccountInput =
     InstructionAccountInput,
+  TAccountPremiumVault extends InstructionAccountInput =
+    InstructionAccountInput,
   TAccountOptionMint extends InstructionAccountInput = InstructionAccountInput,
   TAccountCollateralVault extends InstructionAccountInput =
     InstructionAccountInput,
@@ -188,6 +195,13 @@ export type WriteAsyncInput<
   calendar: TAccountCalendar;
   series: TAccountSeries;
   underlyingMint: TAccountUnderlyingMint;
+  /**
+   * The premium vault's balance is half of the accumulator's input, so it
+   * has to be present at every write: premium that arrived before these
+   * contracts existed must be credited to the writers who carried the
+   * obligation for it *before* the denominator moves.
+   */
+  premiumVault?: TAccountPremiumVault;
   optionMint: TAccountOptionMint;
   collateralVault: TAccountCollateralVault;
   writerUnderlying: TAccountWriterUnderlying;
@@ -206,6 +220,7 @@ export async function getWriteInstructionAsync<
   TAccountCalendar extends InstructionAccountInput,
   TAccountSeries extends InstructionAccountInput,
   TAccountUnderlyingMint extends InstructionAccountInput,
+  TAccountPremiumVault extends InstructionAccountInput,
   TAccountOptionMint extends InstructionAccountInput,
   TAccountCollateralVault extends InstructionAccountInput,
   TAccountWriterUnderlying extends InstructionAccountInput,
@@ -223,6 +238,7 @@ export async function getWriteInstructionAsync<
     TAccountCalendar,
     TAccountSeries,
     TAccountUnderlyingMint,
+    TAccountPremiumVault,
     TAccountOptionMint,
     TAccountCollateralVault,
     TAccountWriterUnderlying,
@@ -259,6 +275,10 @@ export async function getWriteInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountUnderlyingMint,
       InstructionAccountInputAddress<TAccountUnderlyingMint>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountPremiumVault,
+      InstructionAccountInputAddress<TAccountPremiumVault>
     >,
     ResolvedInstructionAccountMeta<
       TAccountOptionMint,
@@ -321,6 +341,11 @@ export async function getWriteInstructionAsync<
     series: { value: input.series ?? null, isSigner: false, isWritable: true },
     underlyingMint: {
       value: input.underlyingMint ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
+    premiumVault: {
+      value: input.premiumVault ?? null,
       isSigner: false,
       isWritable: false,
     },
@@ -388,6 +413,17 @@ export async function getWriteInstructionAsync<
       { programAddress },
     );
   }
+  if (!accounts.premiumVault.value) {
+    accounts.premiumVault.value = await findPremiumVaultPda(
+      {
+        series: getAddressFromResolvedInstructionAccount(
+          "series",
+          accounts.series.value,
+        ),
+      },
+      { programAddress },
+    );
+  }
   if (!accounts.position.value) {
     accounts.position.value = await findPositionPda(
       {
@@ -412,6 +448,7 @@ export async function getWriteInstructionAsync<
       getAccountMeta("calendar", accounts.calendar),
       getAccountMeta("series", accounts.series),
       getAccountMeta("underlyingMint", accounts.underlyingMint),
+      getAccountMeta("premiumVault", accounts.premiumVault),
       getAccountMeta("optionMint", accounts.optionMint),
       getAccountMeta("collateralVault", accounts.collateralVault),
       getAccountMeta("writerUnderlying", accounts.writerUnderlying),
@@ -450,6 +487,10 @@ export async function getWriteInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountUnderlyingMint,
       InstructionAccountInputAddress<TAccountUnderlyingMint>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountPremiumVault,
+      InstructionAccountInputAddress<TAccountPremiumVault>
     >,
     ResolvedInstructionAccountMeta<
       TAccountOptionMint,
@@ -494,6 +535,8 @@ export type WriteInput<
   TAccountSeries extends InstructionAccountInput = InstructionAccountInput,
   TAccountUnderlyingMint extends InstructionAccountInput =
     InstructionAccountInput,
+  TAccountPremiumVault extends InstructionAccountInput =
+    InstructionAccountInput,
   TAccountOptionMint extends InstructionAccountInput = InstructionAccountInput,
   TAccountCollateralVault extends InstructionAccountInput =
     InstructionAccountInput,
@@ -515,6 +558,13 @@ export type WriteInput<
   calendar: TAccountCalendar;
   series: TAccountSeries;
   underlyingMint: TAccountUnderlyingMint;
+  /**
+   * The premium vault's balance is half of the accumulator's input, so it
+   * has to be present at every write: premium that arrived before these
+   * contracts existed must be credited to the writers who carried the
+   * obligation for it *before* the denominator moves.
+   */
+  premiumVault: TAccountPremiumVault;
   optionMint: TAccountOptionMint;
   collateralVault: TAccountCollateralVault;
   writerUnderlying: TAccountWriterUnderlying;
@@ -533,6 +583,7 @@ export function getWriteInstruction<
   TAccountCalendar extends InstructionAccountInput,
   TAccountSeries extends InstructionAccountInput,
   TAccountUnderlyingMint extends InstructionAccountInput,
+  TAccountPremiumVault extends InstructionAccountInput,
   TAccountOptionMint extends InstructionAccountInput,
   TAccountCollateralVault extends InstructionAccountInput,
   TAccountWriterUnderlying extends InstructionAccountInput,
@@ -550,6 +601,7 @@ export function getWriteInstruction<
     TAccountCalendar,
     TAccountSeries,
     TAccountUnderlyingMint,
+    TAccountPremiumVault,
     TAccountOptionMint,
     TAccountCollateralVault,
     TAccountWriterUnderlying,
@@ -585,6 +637,10 @@ export function getWriteInstruction<
   ResolvedInstructionAccountMeta<
     TAccountUnderlyingMint,
     InstructionAccountInputAddress<TAccountUnderlyingMint>
+  >,
+  ResolvedInstructionAccountMeta<
+    TAccountPremiumVault,
+    InstructionAccountInputAddress<TAccountPremiumVault>
   >,
   ResolvedInstructionAccountMeta<
     TAccountOptionMint,
@@ -649,6 +705,11 @@ export function getWriteInstruction<
       isSigner: false,
       isWritable: false,
     },
+    premiumVault: {
+      value: input.premiumVault ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
     optionMint: {
       value: input.optionMint ?? null,
       isSigner: false,
@@ -706,6 +767,7 @@ export function getWriteInstruction<
       getAccountMeta("calendar", accounts.calendar),
       getAccountMeta("series", accounts.series),
       getAccountMeta("underlyingMint", accounts.underlyingMint),
+      getAccountMeta("premiumVault", accounts.premiumVault),
       getAccountMeta("optionMint", accounts.optionMint),
       getAccountMeta("collateralVault", accounts.collateralVault),
       getAccountMeta("writerUnderlying", accounts.writerUnderlying),
@@ -744,6 +806,10 @@ export function getWriteInstruction<
     ResolvedInstructionAccountMeta<
       TAccountUnderlyingMint,
       InstructionAccountInputAddress<TAccountUnderlyingMint>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountPremiumVault,
+      InstructionAccountInputAddress<TAccountPremiumVault>
     >,
     ResolvedInstructionAccountMeta<
       TAccountOptionMint,
@@ -792,14 +858,21 @@ export type ParsedWriteInstruction<
     calendar: TAccountMetas[3];
     series: TAccountMetas[4];
     underlyingMint: TAccountMetas[5];
-    optionMint: TAccountMetas[6];
-    collateralVault: TAccountMetas[7];
-    writerUnderlying: TAccountMetas[8];
-    writerOption: TAccountMetas[9];
-    position: TAccountMetas[10];
-    primaryOracle: TAccountMetas[11];
-    secondaryOracle: TAccountMetas[12];
-    underlyingTokenProgram: TAccountMetas[13];
+    /**
+     * The premium vault's balance is half of the accumulator's input, so it
+     * has to be present at every write: premium that arrived before these
+     * contracts existed must be credited to the writers who carried the
+     * obligation for it *before* the denominator moves.
+     */
+    premiumVault: TAccountMetas[6];
+    optionMint: TAccountMetas[7];
+    collateralVault: TAccountMetas[8];
+    writerUnderlying: TAccountMetas[9];
+    writerOption: TAccountMetas[10];
+    position: TAccountMetas[11];
+    primaryOracle: TAccountMetas[12];
+    secondaryOracle: TAccountMetas[13];
+    underlyingTokenProgram: TAccountMetas[14];
   };
   data: WriteInstructionData;
 };
@@ -812,12 +885,12 @@ export function parseWriteInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedWriteInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 14) {
+  if (instruction.accounts.length < 15) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 14,
+        expectedAccountMetas: 15,
       },
     );
   }
@@ -836,6 +909,7 @@ export function parseWriteInstruction<
       calendar: getNextAccount(),
       series: getNextAccount(),
       underlyingMint: getNextAccount(),
+      premiumVault: getNextAccount(),
       optionMint: getNextAccount(),
       collateralVault: getNextAccount(),
       writerUnderlying: getNextAccount(),

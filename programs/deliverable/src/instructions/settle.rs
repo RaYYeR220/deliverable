@@ -16,6 +16,8 @@ use crate::fixed::mul_div_floor;
 use crate::instructions::{
     assert_security_actionable, transfer_checked_forwarding, SeriesSigner,
 };
+use crate::mint_guards::read_mint_guards;
+use crate::scaled_ui::read_multiplier;
 use crate::state::{
     Exercised, MarketCalendar, OptionSeries, PositionSettled, Registry, SecurityState,
     SeriesPhase, WriterPosition,
@@ -48,9 +50,13 @@ pub struct Exercise<'info> {
         seeds = [
             SERIES_SEED,
             series.underlying_mint.as_ref(),
+            series.quote_mint.as_ref(),
             &series.expiry_ts.to_le_bytes(),
             &series.strike0.to_le_bytes(),
+            &series.contract_raw_size.to_le_bytes(),
+            &series.settlement_window_minutes.to_le_bytes(),
             &[series.kind as u8],
+            &[series.adjust_on_corporate_action as u8],
         ],
         bump = series.bump,
     )]
@@ -130,7 +136,20 @@ pub fn exercise<'info>(
         now,
     )?;
 
-    let phase = ctx.accounts.series.phase(&ctx.accounts.calendar, now);
+    // The window is measured in minutes the venue was actually able to act in.
+    // Everything the gate just proved is now behind us, so a refusal that ran
+    // through part of the window gives that part of the window back instead of
+    // expiring the holder's option against a market they were refused entry to.
+    let refused = ctx.accounts.series.refused_window_minutes(
+        &ctx.accounts.calendar,
+        &ctx.accounts.security.halt,
+        &actionable.multiplier,
+        now,
+    );
+    let phase = ctx
+        .accounts
+        .series
+        .phase_with_refusals(&ctx.accounts.calendar, now, refused);
     require!(
         phase != SeriesPhase::Active,
         DeliverableError::SettlementWindowNotOpen
@@ -141,6 +160,10 @@ pub fn exercise<'info>(
     );
 
     let multiplier = actionable.multiplier.effective;
+    // The mint's multiplier is the issuer's to set and ours to price against.
+    // Past the band it is not a corporate action any more, and a re-cut strike
+    // derived from it is not a price — refusing is the only honest answer.
+    ctx.accounts.series.require_multiplier_in_band(multiplier)?;
     let strike = ctx.accounts.series.current_strike(multiplier)?;
     let cost = ctx.accounts.series.exercise_cost(multiplier, contracts)?;
     let raw = ctx.accounts.series.delivery_raw(contracts)?;
@@ -223,9 +246,21 @@ pub fn exercise<'info>(
 #[derive(Accounts)]
 pub struct SettleExpired<'info> {
     pub writer: Signer<'info>,
+    /// Carried for one reason: without it there is nothing to bind the calendar
+    /// to. `OptionSeries` does not store a calendar id, so the only check on
+    /// the account that decides whether the exercise window has run out was
+    /// that it is *a* calendar — and a writer who hands in one that says the
+    /// window is over takes the collateral back before any holder can exercise.
+    #[account(
+        seeds = [SECURITY_SEED, series.underlying_mint.as_ref()],
+        bump = security.bump,
+        constraint = security.key() == series.security @ DeliverableError::SecurityMismatch,
+    )]
+    pub security: Box<Account<'info, SecurityState>>,
     #[account(
         seeds = [CALENDAR_SEED, &calendar.id.to_le_bytes()],
         bump = calendar.bump,
+        constraint = calendar.id == security.calendar_id @ DeliverableError::CalendarMismatch,
     )]
     pub calendar: Box<Account<'info, MarketCalendar>>,
     #[account(
@@ -233,9 +268,13 @@ pub struct SettleExpired<'info> {
         seeds = [
             SERIES_SEED,
             series.underlying_mint.as_ref(),
+            series.quote_mint.as_ref(),
             &series.expiry_ts.to_le_bytes(),
             &series.strike0.to_le_bytes(),
+            &series.contract_raw_size.to_le_bytes(),
+            &series.settlement_window_minutes.to_le_bytes(),
             &[series.kind as u8],
+            &[series.adjust_on_corporate_action as u8],
         ],
         bump = series.bump,
     )]
@@ -276,17 +315,46 @@ pub struct SettleExpired<'info> {
 /// Close out one writer once the exercise window has run its course.
 ///
 /// Assigned contracts are paid in the quote asset the holders handed over;
-/// everything unassigned comes back as the raw share it went in as. No gate
-/// here: by this point the security's state cannot change the outcome, and a
-/// halt must not be able to strand a writer's collateral.
+/// everything unassigned comes back as the raw share it went in as. Still no
+/// *gate* here: by this point the security's state cannot change the outcome,
+/// and a halt must not be able to strand a writer's collateral. What the halt
+/// and the mint do decide is the **clock** — how much of the exercise window
+/// the holders actually got — which is a different question from whether this
+/// instruction may run, and answering it here is what stops a refusal spanning
+/// the window from silently expiring every in-the-money option in it.
 pub fn settle_expired<'info>(
     ctx: Context<'info, SettleExpired<'info>>,
 ) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
-    require!(
-        ctx.accounts.series.phase(&ctx.accounts.calendar, now) == SeriesPhase::Settled,
-        DeliverableError::SettlementWindowNotOpen
+
+    // The multiplier is read for the clock, not for a price: a change's
+    // effective timestamp stays on the mint after it lands, so the minutes its
+    // quiet period refused over are still subtractable at settlement.
+    let multiplier = read_multiplier(&ctx.accounts.underlying_mint, now)?;
+    let refused = ctx.accounts.series.refused_window_minutes(
+        &ctx.accounts.calendar,
+        &ctx.accounts.security.halt,
+        &multiplier,
+        now,
     );
+    require!(
+        ctx.accounts
+            .series
+            .phase_with_refusals(&ctx.accounts.calendar, now, refused)
+            == SeriesPhase::Settled,
+        DeliverableError::SettlementWindowPostponed
+    );
+
+    // Not the gate, and deliberately only this one condition of it: forwarding
+    // caller-chosen accounts into an attached hook program is a different risk
+    // from acting on a stale price, and it is the one risk that does not go
+    // away by virtue of the outcome already being fixed.
+    let guards = read_mint_guards(&ctx.accounts.underlying_mint)?;
+    require!(
+        guards.transfer_hook.is_none(),
+        DeliverableError::HookAttached
+    );
+
     require!(
         !ctx.accounts.position.settled,
         DeliverableError::NothingToSettle
@@ -296,20 +364,47 @@ pub fn settle_expired<'info>(
         DeliverableError::NothingToSettle
     );
 
-    let assigned = ctx.accounts.position.assigned(&ctx.accounts.series)?;
+    // Assignment, conserving: the writers' assignments sum to exactly what was
+    // exercised, so what they collectively reclaim is exactly what is in the
+    // vault and settling first is worth nothing.
+    let assigned = ctx
+        .accounts
+        .position
+        .conserving_assignment(&ctx.accounts.series)?;
     let unassigned = ctx.accounts.position.contracts.saturating_sub(assigned);
     let raw_back = ctx.accounts.series.delivery_raw(unassigned)?;
 
-    let quote_due = mul_div_floor(
-        ctx.accounts.series.quote_collected as u128,
-        ctx.accounts.position.contracts as u128,
-        ctx.accounts.series.contracts_written as u128,
-    )?;
-    let quote_due = u64::try_from(quote_due).map_err(|_| DeliverableError::MathOverflow)?;
+    // Paid for what this writer actually delivered, not for what they wrote.
+    // The two differ by the assignment remainder, and paying on the book while
+    // assigning on the vault is what let one writer keep a share the next
+    // writer had funded.
+    let series = &ctx.accounts.series;
+    let exercised = series.contracts_exercised as u128;
+    let quote_due = if exercised == 0 {
+        0u64
+    } else {
+        let before = mul_div_floor(
+            series.quote_collected as u128,
+            series.contracts_assigned_total as u128,
+            exercised,
+        )?;
+        let after = mul_div_floor(
+            series.quote_collected as u128,
+            series
+                .contracts_assigned_total
+                .checked_add(assigned)
+                .ok_or(DeliverableError::MathOverflow)? as u128,
+            exercised,
+        )?;
+        u64::try_from(after.saturating_sub(before))
+            .map_err(|_| DeliverableError::MathOverflow)?
+    };
 
-    // Pro rata over integers leaves at most one unit per writer unaccounted
-    // for; clamping to the balance means the last writer out cannot be blocked
-    // by a rounding remainder that is not there.
+    // The clamp stays, but only as a last-resort guard against the underlying
+    // leaving the vault by a route this program does not control — a
+    // permanent-delegate seizure. Assignment conserves, so in every ordinary
+    // settlement the shortfall is zero; when it is not, it goes on the wire.
+    let raw_shortfall = raw_back.saturating_sub(ctx.accounts.collateral_vault.amount);
     let raw_back = raw_back.min(ctx.accounts.collateral_vault.amount);
     let quote_due = quote_due.min(ctx.accounts.quote_vault.amount);
 
@@ -345,6 +440,11 @@ pub fn settle_expired<'info>(
 
     let series_key = ctx.accounts.series.key();
     let writer = ctx.accounts.writer.key();
+    let series = &mut ctx.accounts.series;
+    series.contracts_assigned_total = series
+        .contracts_assigned_total
+        .checked_add(assigned)
+        .ok_or(DeliverableError::MathOverflow)?;
     let position = &mut ctx.accounts.position;
     position.settled = true;
     position.raw_collateral = position.raw_collateral.saturating_sub(raw_back);
@@ -355,6 +455,7 @@ pub fn settle_expired<'info>(
         contracts_assigned: assigned,
         raw_returned: raw_back,
         quote_paid: quote_due,
+        raw_shortfall,
     });
     Ok(())
 }

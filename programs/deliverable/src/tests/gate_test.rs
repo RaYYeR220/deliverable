@@ -139,6 +139,7 @@ impl GateInputs<'_> {
             since_ts: self.now - 120,
             attested_ts: self.now - 60,
             source: 1,
+            lifted_ts: 0,
         };
         self
     }

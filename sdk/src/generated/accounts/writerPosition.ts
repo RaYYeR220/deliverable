@@ -23,6 +23,8 @@ import {
   getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU128Decoder,
+  getU128Encoder,
   getU64Decoder,
   getU64Encoder,
   getU8Decoder,
@@ -63,6 +65,16 @@ export type WriterPosition = {
   premiumClaimed: bigint;
   settled: boolean;
   bump: number;
+  /**
+   * The accumulator level this position is paid up to, scaled by [`SCALE`].
+   *
+   * Raised on every write, by the accumulator's value at that moment times
+   * the contracts written, so premium that arrived before those contracts
+   * existed is not claimable against them. This is the whole of the
+   * time-weighting: without it, writing one contract a second before expiry
+   * bought a pro-rata share of every premium the series had ever earned.
+   */
+  premiumDebt: bigint;
 };
 
 export type WriterPositionArgs = {
@@ -76,6 +88,16 @@ export type WriterPositionArgs = {
   premiumClaimed: number | bigint;
   settled: boolean;
   bump: number;
+  /**
+   * The accumulator level this position is paid up to, scaled by [`SCALE`].
+   *
+   * Raised on every write, by the accumulator's value at that moment times
+   * the contracts written, so premium that arrived before those contracts
+   * existed is not claimable against them. This is the whole of the
+   * time-weighting: without it, writing one contract a second before expiry
+   * bought a pro-rata share of every premium the series had ever earned.
+   */
+  premiumDebt: number | bigint;
 };
 
 /** Gets the encoder for {@link WriterPositionArgs} account data. */
@@ -90,6 +112,7 @@ export function getWriterPositionEncoder(): FixedSizeEncoder<WriterPositionArgs>
       ["premiumClaimed", getU64Encoder()],
       ["settled", getBooleanEncoder()],
       ["bump", getU8Encoder()],
+      ["premiumDebt", getU128Encoder()],
     ]),
     (value) => ({ ...value, discriminator: WRITER_POSITION_DISCRIMINATOR }),
   );
@@ -106,6 +129,7 @@ export function getWriterPositionDecoder(): FixedSizeDecoder<WriterPosition> {
     ["premiumClaimed", getU64Decoder()],
     ["settled", getBooleanDecoder()],
     ["bump", getU8Decoder()],
+    ["premiumDebt", getU128Decoder()],
   ]);
 }
 
@@ -179,5 +203,5 @@ export async function fetchAllMaybeWriterPosition(
 }
 
 export function getWriterPositionSize(): number {
-  return 98;
+  return 114;
 }

@@ -56,6 +56,7 @@ export function getSettleExpiredDiscriminatorBytes(): ReadonlyUint8Array {
 export type SettleExpiredInstruction<
   TProgram extends string = typeof DELIVERABLE_PROGRAM_ADDRESS,
   TAccountWriter extends string | AccountMeta<string> = string,
+  TAccountSecurity extends string | AccountMeta<string> = string,
   TAccountCalendar extends string | AccountMeta<string> = string,
   TAccountSeries extends string | AccountMeta<string> = string,
   TAccountPosition extends string | AccountMeta<string> = string,
@@ -76,6 +77,9 @@ export type SettleExpiredInstruction<
         ? ReadonlySignerAccount<TAccountWriter> &
             AccountSignerMeta<TAccountWriter>
         : TAccountWriter,
+      TAccountSecurity extends string
+        ? ReadonlyAccount<TAccountSecurity>
+        : TAccountSecurity,
       TAccountCalendar extends string
         ? ReadonlyAccount<TAccountCalendar>
         : TAccountCalendar,
@@ -144,6 +148,7 @@ export function getSettleExpiredInstructionDataCodec(): FixedSizeCodec<
 
 export type SettleExpiredAsyncInput<
   TAccountWriter extends InstructionSignerInput = InstructionSignerInput,
+  TAccountSecurity extends InstructionAccountInput = InstructionAccountInput,
   TAccountCalendar extends InstructionAccountInput = InstructionAccountInput,
   TAccountSeries extends InstructionAccountInput = InstructionAccountInput,
   TAccountPosition extends InstructionAccountInput = InstructionAccountInput,
@@ -162,6 +167,14 @@ export type SettleExpiredAsyncInput<
     InstructionAccountInput,
 > = {
   writer: TAccountWriter;
+  /**
+   * Carried for one reason: without it there is nothing to bind the calendar
+   * to. `OptionSeries` does not store a calendar id, so the only check on
+   * the account that decides whether the exercise window has run out was
+   * that it is *a* calendar — and a writer who hands in one that says the
+   * window is over takes the collateral back before any holder can exercise.
+   */
+  security: TAccountSecurity;
   calendar: TAccountCalendar;
   series: TAccountSeries;
   position?: TAccountPosition;
@@ -177,6 +190,7 @@ export type SettleExpiredAsyncInput<
 
 export async function getSettleExpiredInstructionAsync<
   TAccountWriter extends InstructionSignerInput,
+  TAccountSecurity extends InstructionAccountInput,
   TAccountCalendar extends InstructionAccountInput,
   TAccountSeries extends InstructionAccountInput,
   TAccountPosition extends InstructionAccountInput,
@@ -192,6 +206,7 @@ export async function getSettleExpiredInstructionAsync<
 >(
   input: SettleExpiredAsyncInput<
     TAccountWriter,
+    TAccountSecurity,
     TAccountCalendar,
     TAccountSeries,
     TAccountPosition,
@@ -211,6 +226,10 @@ export async function getSettleExpiredInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountWriter,
       InstructionAccountInputAddress<TAccountWriter>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountSecurity,
+      InstructionAccountInputAddress<TAccountSecurity>
     >,
     ResolvedInstructionAccountMeta<
       TAccountCalendar,
@@ -267,6 +286,11 @@ export async function getSettleExpiredInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     writer: { value: input.writer ?? null, isSigner: true, isWritable: false },
+    security: {
+      value: input.security ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
     calendar: {
       value: input.calendar ?? null,
       isSigner: false,
@@ -344,6 +368,7 @@ export async function getSettleExpiredInstructionAsync<
   return Object.freeze({
     accounts: [
       getAccountMeta("writer", accounts.writer),
+      getAccountMeta("security", accounts.security),
       getAccountMeta("calendar", accounts.calendar),
       getAccountMeta("series", accounts.series),
       getAccountMeta("position", accounts.position),
@@ -363,6 +388,10 @@ export async function getSettleExpiredInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountWriter,
       InstructionAccountInputAddress<TAccountWriter>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountSecurity,
+      InstructionAccountInputAddress<TAccountSecurity>
     >,
     ResolvedInstructionAccountMeta<
       TAccountCalendar,
@@ -413,6 +442,7 @@ export async function getSettleExpiredInstructionAsync<
 
 export type SettleExpiredInput<
   TAccountWriter extends InstructionSignerInput = InstructionSignerInput,
+  TAccountSecurity extends InstructionAccountInput = InstructionAccountInput,
   TAccountCalendar extends InstructionAccountInput = InstructionAccountInput,
   TAccountSeries extends InstructionAccountInput = InstructionAccountInput,
   TAccountPosition extends InstructionAccountInput = InstructionAccountInput,
@@ -431,6 +461,14 @@ export type SettleExpiredInput<
     InstructionAccountInput,
 > = {
   writer: TAccountWriter;
+  /**
+   * Carried for one reason: without it there is nothing to bind the calendar
+   * to. `OptionSeries` does not store a calendar id, so the only check on
+   * the account that decides whether the exercise window has run out was
+   * that it is *a* calendar — and a writer who hands in one that says the
+   * window is over takes the collateral back before any holder can exercise.
+   */
+  security: TAccountSecurity;
   calendar: TAccountCalendar;
   series: TAccountSeries;
   position: TAccountPosition;
@@ -446,6 +484,7 @@ export type SettleExpiredInput<
 
 export function getSettleExpiredInstruction<
   TAccountWriter extends InstructionSignerInput,
+  TAccountSecurity extends InstructionAccountInput,
   TAccountCalendar extends InstructionAccountInput,
   TAccountSeries extends InstructionAccountInput,
   TAccountPosition extends InstructionAccountInput,
@@ -461,6 +500,7 @@ export function getSettleExpiredInstruction<
 >(
   input: SettleExpiredInput<
     TAccountWriter,
+    TAccountSecurity,
     TAccountCalendar,
     TAccountSeries,
     TAccountPosition,
@@ -479,6 +519,10 @@ export function getSettleExpiredInstruction<
   ResolvedInstructionAccountMeta<
     TAccountWriter,
     InstructionAccountInputAddress<TAccountWriter>
+  >,
+  ResolvedInstructionAccountMeta<
+    TAccountSecurity,
+    InstructionAccountInputAddress<TAccountSecurity>
   >,
   ResolvedInstructionAccountMeta<
     TAccountCalendar,
@@ -534,6 +578,11 @@ export function getSettleExpiredInstruction<
   // Original accounts.
   const originalAccounts = {
     writer: { value: input.writer ?? null, isSigner: true, isWritable: false },
+    security: {
+      value: input.security ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
     calendar: {
       value: input.calendar ?? null,
       isSigner: false,
@@ -594,6 +643,7 @@ export function getSettleExpiredInstruction<
   return Object.freeze({
     accounts: [
       getAccountMeta("writer", accounts.writer),
+      getAccountMeta("security", accounts.security),
       getAccountMeta("calendar", accounts.calendar),
       getAccountMeta("series", accounts.series),
       getAccountMeta("position", accounts.position),
@@ -613,6 +663,10 @@ export function getSettleExpiredInstruction<
     ResolvedInstructionAccountMeta<
       TAccountWriter,
       InstructionAccountInputAddress<TAccountWriter>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountSecurity,
+      InstructionAccountInputAddress<TAccountSecurity>
     >,
     ResolvedInstructionAccountMeta<
       TAccountCalendar,
@@ -668,17 +722,25 @@ export type ParsedSettleExpiredInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     writer: TAccountMetas[0];
-    calendar: TAccountMetas[1];
-    series: TAccountMetas[2];
-    position: TAccountMetas[3];
-    underlyingMint: TAccountMetas[4];
-    quoteMint: TAccountMetas[5];
-    collateralVault: TAccountMetas[6];
-    quoteVault: TAccountMetas[7];
-    writerUnderlying: TAccountMetas[8];
-    writerQuote: TAccountMetas[9];
-    underlyingTokenProgram: TAccountMetas[10];
-    quoteTokenProgram: TAccountMetas[11];
+    /**
+     * Carried for one reason: without it there is nothing to bind the calendar
+     * to. `OptionSeries` does not store a calendar id, so the only check on
+     * the account that decides whether the exercise window has run out was
+     * that it is *a* calendar — and a writer who hands in one that says the
+     * window is over takes the collateral back before any holder can exercise.
+     */
+    security: TAccountMetas[1];
+    calendar: TAccountMetas[2];
+    series: TAccountMetas[3];
+    position: TAccountMetas[4];
+    underlyingMint: TAccountMetas[5];
+    quoteMint: TAccountMetas[6];
+    collateralVault: TAccountMetas[7];
+    quoteVault: TAccountMetas[8];
+    writerUnderlying: TAccountMetas[9];
+    writerQuote: TAccountMetas[10];
+    underlyingTokenProgram: TAccountMetas[11];
+    quoteTokenProgram: TAccountMetas[12];
   };
   data: SettleExpiredInstructionData;
 };
@@ -691,12 +753,12 @@ export function parseSettleExpiredInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedSettleExpiredInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 12) {
+  if (instruction.accounts.length < 13) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 12,
+        expectedAccountMetas: 13,
       },
     );
   }
@@ -710,6 +772,7 @@ export function parseSettleExpiredInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       writer: getNextAccount(),
+      security: getNextAccount(),
       calendar: getNextAccount(),
       series: getNextAccount(),
       position: getNextAccount(),

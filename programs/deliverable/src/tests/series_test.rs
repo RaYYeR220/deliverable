@@ -7,7 +7,6 @@
 use anchor_lang::prelude::*;
 use solana_signer::Signer as _;
 
-use crate::constants::SERIES_SEED;
 use crate::fixed::f64_bits_to_fixed;
 use crate::state::OptionKind;
 
@@ -17,17 +16,16 @@ use super::venue::{
 };
 
 fn try_list(venue: &mut Venue, expiry: i64, kind: OptionKind) -> bool {
-    let series = Pubkey::find_program_address(
-        &[
-            SERIES_SEED,
-            venue.underlying().as_ref(),
-            &expiry.to_le_bytes(),
-            &STRIKE0.to_le_bytes(),
-            &[kind as u8],
-        ],
-        &crate::ID,
-    )
-    .0;
+    let series = super::venue::series_pda(
+        venue.underlying(),
+        venue.quote(),
+        expiry,
+        STRIKE0,
+        CONTRACT_RAW_SIZE,
+        SETTLEMENT_WINDOW_MINUTES,
+        kind,
+        true,
+    );
     let instruction = ix(
         crate::accounts::CreateSeries {
             creator: venue.authority.pubkey(),

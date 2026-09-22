@@ -25,6 +25,14 @@ pub enum RefusalCode {
     SourcesDisagree = 8,
     /// The security is bound to one price source and nothing corroborates it.
     SingleSource = 9,
+    /// A bound price account could not be read at all: an unpublished entry, a
+    /// decode failure, or an update past its own outer age bound. Distinct from
+    /// [`RefusalCode::OracleStale`], which is a price we could read and would
+    /// not act on. Appended rather than renumbered — see the note above.
+    OracleUnreadable = 10,
+    /// The mint's `ScaledUiAmount` multiplier could not be read or decoded, so
+    /// there is no defensible re-cut of the strike.
+    MultiplierUnreadable = 11,
 }
 
 #[error_code]
@@ -102,6 +110,24 @@ pub enum DeliverableError {
     NotAttestor,
     #[msg("Signer does not own this position")]
     NotPositionOwner,
+
+    // --- appended after the audit; Anchor numbers these positionally, so new
+    // variants go at the end and every code above keeps the integer a published
+    // failed transaction already carries. ---
+    #[msg("Multiplier has moved too far since listing to re-cut the strike")]
+    MultiplierOutOfBand,
+    #[msg("Oracle account could not be read as the configured source")]
+    OracleUnreadable,
+    #[msg("Mint multiplier could not be read")]
+    MultiplierUnreadable,
+    #[msg("Settlement window has not elapsed in actionable minutes yet")]
+    SettlementWindowPostponed,
+    #[msg("Quote mint and underlying mint must differ")]
+    SelfQuotedSeries,
+    #[msg("Settlement window is longer than the session clock can measure")]
+    SettlementWindowTooLong,
+    #[msg("A security must be bound to two distinct price sources")]
+    SourcesNotIndependent,
 }
 
 impl From<RefusalCode> for DeliverableError {
@@ -116,6 +142,8 @@ impl From<RefusalCode> for DeliverableError {
             RefusalCode::HookAttached => DeliverableError::HookAttached,
             RefusalCode::SourcesDisagree => DeliverableError::SourcesDisagree,
             RefusalCode::SingleSource => DeliverableError::SingleSource,
+            RefusalCode::OracleUnreadable => DeliverableError::OracleUnreadable,
+            RefusalCode::MultiplierUnreadable => DeliverableError::MultiplierUnreadable,
         }
     }
 }

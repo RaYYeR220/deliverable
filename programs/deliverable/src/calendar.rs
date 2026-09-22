@@ -94,8 +94,8 @@ pub fn resolve_session(cal: &MarketCalendar, ts: i64) -> Session {
         return Session::Closed;
     }
 
-    let (_, month, day) = civil_from_days(days);
-    let close = match cal.exception(MarketCalendar::date_key(month, day)) {
+    let (year, month, day) = civil_from_days(days);
+    let close = match cal.exception(MarketCalendar::date_key(year, month, day)) {
         Some(Exception::Closed) => return Session::Closed,
         Some(Exception::EarlyClose(minute_of_close)) => minute_of_close,
         None => cal.regular_close_minute,
@@ -125,8 +125,8 @@ fn day_bounds(cal: &MarketCalendar, day: i64) -> Option<(u16, u16)> {
     if weekday == 0 || weekday == 6 {
         return None;
     }
-    let (_, month, date) = civil_from_days(day);
-    let close = match cal.exception(MarketCalendar::date_key(month, date)) {
+    let (year, month, date) = civil_from_days(day);
+    let close = match cal.exception(MarketCalendar::date_key(year, month, date)) {
         Some(Exception::Closed) => return None,
         Some(Exception::EarlyClose(minute_of_close)) => minute_of_close,
         None => cal.regular_close_minute,

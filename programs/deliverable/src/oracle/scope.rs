@@ -18,7 +18,10 @@
 
 use anchor_lang::prelude::*;
 
-use crate::constants::{SCOPE_ENTRY_SIZE, SCOPE_MAX_ENTRIES, SCOPE_PRICES_OFFSET};
+use crate::constants::{
+    SCOPE_ENTRY_SIZE, SCOPE_MAX_ENTRIES, SCOPE_ORACLE_PRICES_DISCRIMINATOR, SCOPE_PRICES_LEN,
+    SCOPE_PRICES_OFFSET,
+};
 use crate::error::DeliverableError;
 
 use super::Observation;
@@ -27,9 +30,21 @@ pub fn decode(data: &[u8], index: u16) -> Result<Observation> {
     let i = index as usize;
     require!(i < SCOPE_MAX_ENTRIES, DeliverableError::ScopeIndexOutOfRange);
 
+    // `OraclePrices` is a fixed-size Anchor account, so its type is checkable
+    // rather than inferable: exactly one length, and a discriminator in front.
+    // A length check of "long enough for the index we want" accepted any
+    // Scope-owned account of 18kB or more at index 332, which is how a feed we
+    // never bound could answer for one we did.
+    require!(
+        data.len() == SCOPE_PRICES_LEN,
+        DeliverableError::OracleSourceMismatch
+    );
+    require!(
+        data[..8] == SCOPE_ORACLE_PRICES_DISCRIMINATOR,
+        DeliverableError::OracleSourceMismatch
+    );
+
     let start = SCOPE_PRICES_OFFSET + i * SCOPE_ENTRY_SIZE;
-    let end = start + 32; // only the four u64 we read
-    require!(data.len() >= end, DeliverableError::ScopeIndexOutOfRange);
 
     let value = u64_at(data, start);
     let exp = u64_at(data, start + 8);

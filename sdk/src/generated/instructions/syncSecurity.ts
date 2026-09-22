@@ -116,8 +116,10 @@ export type SyncSecurityAsyncInput<
   security?: TAccountSecurity;
   underlyingMint: TAccountUnderlyingMint;
   /**
-   * this security was registered with; an account from the wrong program is
-   * rejected there.
+   * registered with, which checks the account's **address**, its owning
+   * program, its discriminator and its length before reading a byte of it.
+   * Unchecked here and checked there because the adapter is chosen by the
+   * registration, not by the account list.
    */
   primaryOracle: TAccountPrimaryOracle;
   /**
@@ -251,8 +253,10 @@ export type SyncSecurityInput<
   security: TAccountSecurity;
   underlyingMint: TAccountUnderlyingMint;
   /**
-   * this security was registered with; an account from the wrong program is
-   * rejected there.
+   * registered with, which checks the account's **address**, its owning
+   * program, its discriminator and its length before reading a byte of it.
+   * Unchecked here and checked there because the adapter is chosen by the
+   * registration, not by the account list.
    */
   primaryOracle: TAccountPrimaryOracle;
   /**
@@ -368,8 +372,10 @@ export type ParsedSyncSecurityInstruction<
     security: TAccountMetas[0];
     underlyingMint: TAccountMetas[1];
     /**
-     * this security was registered with; an account from the wrong program is
-     * rejected there.
+     * registered with, which checks the account's **address**, its owning
+     * program, its discriminator and its length before reading a byte of it.
+     * Unchecked here and checked there because the adapter is chosen by the
+     * registration, not by the account list.
      */
     primaryOracle: TAccountMetas[2];
     /**

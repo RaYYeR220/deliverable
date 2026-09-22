@@ -12,6 +12,8 @@ import {
   getStructEncoder,
   getU16Decoder,
   getU16Encoder,
+  getU32Decoder,
+  getU32Encoder,
   getU8Decoder,
   getU8Encoder,
   type FixedSizeCodec,
@@ -22,10 +24,16 @@ import {
 /** A single deviation from the regular weekday session. */
 export type CalendarEntry = {
   /**
-   * `(month << 8) | day`. Pyth publishes its schedule as bare MMDD, so a
-   * calendar covers the twelve-month window it was committed for and the
-   * authority appends the next one rather than the program guessing when a
-   * moveable holiday lands.
+   * `(year << 16) | (month << 8) | day`.
+   *
+   * The year is load-bearing. Pyth publishes its schedule as bare MMDD, and
+   * keying on that meant every entry fired in every subsequent year until
+   * somebody rewrote the table: Labor Day 2026 is 7 September, so in 2027 an
+   * ordinary Tuesday read as closed — and Labor Day 2027 is the 6th, which
+   * was not in the table at all, so the program reported a regular session
+   * on a day the exchange was shut. The second direction is the dangerous
+   * one: the session gate passes and the refusal falls through to a
+   * staleness check that a weekend-fresh timestamp satisfies.
    */
   dateKey: number;
   /** [`ENTRY_CLOSED`] or [`ENTRY_EARLY_CLOSE`]. */
@@ -38,7 +46,7 @@ export type CalendarEntryArgs = CalendarEntry;
 
 export function getCalendarEntryEncoder(): FixedSizeEncoder<CalendarEntryArgs> {
   return getStructEncoder([
-    ["dateKey", getU16Encoder()],
+    ["dateKey", getU32Encoder()],
     ["kind", getU8Encoder()],
     ["closeMinute", getU16Encoder()],
   ]);
@@ -46,7 +54,7 @@ export function getCalendarEntryEncoder(): FixedSizeEncoder<CalendarEntryArgs> {
 
 export function getCalendarEntryDecoder(): FixedSizeDecoder<CalendarEntry> {
   return getStructDecoder([
-    ["dateKey", getU16Decoder()],
+    ["dateKey", getU32Decoder()],
     ["kind", getU8Decoder()],
     ["closeMinute", getU16Decoder()],
   ]);

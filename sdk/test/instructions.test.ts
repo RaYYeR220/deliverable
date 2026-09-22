@@ -132,6 +132,9 @@ describe('getProgramAccounts filters match the account layouts', () => {
       premiumClaimedTotal: 0n,
       windowOpenedTs: 0n,
       acknowledgedMultiplier: 1n,
+      contractsAssignedTotal: 0n,
+      premiumPerContractAcc: 0n,
+      premiumCreditedTotal: 0n,
     });
     expect(bytes.length).toBe(generated.getOptionSeriesSize());
     expect([...bytes.subarray(0, 8)]).toEqual([...generated.getOptionSeriesDiscriminatorBytes()]);
@@ -148,6 +151,7 @@ describe('getProgramAccounts filters match the account layouts', () => {
       premiumClaimed: 0n,
       settled: false,
       bump: 255,
+      premiumDebt: 0n,
     });
     expect(bytes.length).toBe(generated.getWriterPositionSize());
     expect([...bytes.subarray(8, 40)]).toEqual([...getAddressEncoder().encode(owner)]);
@@ -156,7 +160,18 @@ describe('getProgramAccounts filters match the account layouts', () => {
 
 describe('PDAs', () => {
   const mint = address('XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp');
-  const seeds = { underlyingMint: mint, expiryTs: 1_792_000_000n, strike0: 350_000_000n, kind: OptionKind.Call };
+  // Every term a writer is exposed to is in the address, not just the four a
+  // UI would show: two different sets of terms are two different series.
+  const seeds = {
+    underlyingMint: mint,
+    quoteMint: address('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+    expiryTs: 1_792_000_000n,
+    strike0: 350_000_000n,
+    contractRawSize: 100_000_000n,
+    settlementWindowMinutes: 30,
+    kind: OptionKind.Call,
+    adjustOnCorporateAction: true,
+  };
 
   it('the series PDA uses the seeds create_series declares', async () => {
     const [pda] = await findSeriesPda(seeds);
@@ -167,11 +182,31 @@ describe('PDAs', () => {
     };
     const [expected] = await getProgramDerivedAddress({
       programAddress: address(idl.address),
-      seeds: [new TextEncoder().encode('series'), getAddressEncoder().encode(mint), le(1_792_000_000n, 8), le(350_000_000n, 8), new Uint8Array([0])],
+      seeds: [
+        new TextEncoder().encode('series'),
+        getAddressEncoder().encode(mint),
+        getAddressEncoder().encode(address('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v')),
+        le(1_792_000_000n, 8),
+        le(350_000_000n, 8),
+        le(100_000_000n, 8),
+        new Uint8Array([30, 0]),
+        new Uint8Array([0]),
+        new Uint8Array([1]),
+      ],
     });
     expect(pda).toBe(expected);
     const [put] = await findSeriesPda({ ...seeds, kind: OptionKind.Put });
     expect(put).not.toBe(pda);
+    // ...and so is every other term, which is the point of widening the seed.
+    for (const variant of [
+      { quoteMint: address('So11111111111111111111111111111111111111112') },
+      { contractRawSize: 1n },
+      { settlementWindowMinutes: 1 },
+      { adjustOnCorporateAction: false },
+    ]) {
+      const [other] = await findSeriesPda({ ...seeds, ...variant });
+      expect(other, Object.keys(variant)[0]).not.toBe(pda);
+    }
   });
 
   it('the program id is configuration: a different id derives different accounts', async () => {

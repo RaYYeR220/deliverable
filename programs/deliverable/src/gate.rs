@@ -14,7 +14,7 @@
 use anchor_lang::prelude::*;
 
 use crate::calendar::{resolve_session, Session};
-use crate::constants::MULTIPLIER_QUIET_PERIOD_SECS;
+use crate::constants::{HALT_ATTESTATION_MAX_AGE_SECS, MULTIPLIER_QUIET_PERIOD_SECS};
 use crate::error::{DeliverableError, RefusalCode};
 use crate::oracle::{to_fixed, Observation, OracleSource};
 use crate::scaled_ui::MintMultiplier;
@@ -29,13 +29,58 @@ use crate::state::MarketCalendar;
 #[derive(AnchorSerialize, AnchorDeserialize, InitSpace, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct HaltState {
     pub halted: bool,
-    /// When the halt began, as reported by the source.
+    /// When the halt began, as reported by the source. Kept after the halt is
+    /// lifted, because a settlement window has to be able to subtract the
+    /// minutes it covered — otherwise clearing a halt erases the evidence that
+    /// it was ever set.
     pub since_ts: i64,
-    /// When the attestor signed it. Stale attestations are the attestor's
-    /// problem to refresh, not something we silently expire.
+    /// When the attestor signed it. Read, not decorative: an attestation older
+    /// than [`crate::constants::HALT_ATTESTATION_MAX_AGE_SECS`] has stopped
+    /// being a claim about the present and the gate stops honouring it.
     pub attested_ts: i64,
     /// Which feed the attestation came from.
     pub source: u8,
+    /// When the halt stopped being in force, zero while it is in force. Set by
+    /// an explicit clear; a halt that is simply never refreshed ends on its own
+    /// at `attested_ts + HALT_ATTESTATION_MAX_AGE_SECS`.
+    pub lifted_ts: i64,
+}
+
+impl HaltState {
+    /// Whether this attestation is recent enough to be a claim about now.
+    pub fn is_fresh(&self, now: i64) -> bool {
+        now.saturating_sub(self.attested_ts) <= HALT_ATTESTATION_MAX_AGE_SECS
+    }
+
+    /// Whether the gate should refuse on this halt right now.
+    pub fn is_in_force(&self, now: i64) -> bool {
+        self.halted && self.is_fresh(now)
+    }
+
+    /// The interval this halt provably refused over, as far as durable state
+    /// can prove it: `None` when there is nothing to subtract.
+    ///
+    /// This is what lets a settlement window be measured in *actionable*
+    /// minutes without a keeper. A halt in force ran from `since_ts` until now;
+    /// a halt nobody refreshed ran until its attestation went stale; a halt
+    /// that was cleared ran until it was cleared. All three are reconstructible
+    /// from the account after the fact, which is the property that matters —
+    /// the attestor must not be able to erase the window it consumed by
+    /// clearing the halt once the window is gone.
+    pub fn refused_interval(&self, now: i64) -> Option<(i64, i64)> {
+        if self.halted {
+            let until = if self.is_fresh(now) {
+                now
+            } else {
+                self.attested_ts.saturating_add(HALT_ATTESTATION_MAX_AGE_SECS)
+            };
+            Some((self.since_ts, until))
+        } else if self.lifted_ts > 0 {
+            Some((self.since_ts, self.lifted_ts))
+        } else {
+            None
+        }
+    }
 }
 
 #[event]
@@ -82,7 +127,11 @@ pub fn check_actionable(g: &GateInputs) -> Result<Option<RefusalCode>> {
     if resolve_session(g.calendar, g.now) == Session::Closed {
         return refuse(RefusalCode::MarketClosed);
     }
-    if g.halt.halted {
+    // A halt is only a refusal while somebody is still asserting it. One
+    // `attest_halt(true)` used to block exercise on a security across every
+    // series and every expiry forever, because `attested_ts` was written and
+    // never read; holding a halt now costs a transaction an hour, in public.
+    if g.halt.is_in_force(g.now) {
         return refuse(RefusalCode::Halted);
     }
     if g.mint_paused {

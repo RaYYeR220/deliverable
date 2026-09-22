@@ -10,8 +10,8 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::calendar::{resolve_session, Session};
 use crate::constants::{
-    CALENDAR_SEED, MAX_CONTRACTS_PER_SERIES, OPTION_MINT_SEED, PREMIUM_SEED, QUOTE_SEED,
-    REGISTRY_SEED, SECURITY_SEED, SERIES_SEED, VAULT_SEED,
+    CALENDAR_SEED, MAX_CONTRACTS_PER_SERIES, MAX_SETTLEMENT_WINDOW_MINUTES, OPTION_MINT_SEED,
+    PREMIUM_SEED, QUOTE_SEED, REGISTRY_SEED, SECURITY_SEED, SERIES_SEED, VAULT_SEED,
 };
 use crate::error::DeliverableError;
 use crate::scaled_ui::read_multiplier;
@@ -21,7 +21,14 @@ use crate::state::{
 };
 
 #[derive(Accounts)]
-#[instruction(expiry_ts: i64, strike0: u64, kind: OptionKind)]
+#[instruction(
+    expiry_ts: i64,
+    strike0: u64,
+    kind: OptionKind,
+    contract_raw_size: u64,
+    settlement_window_minutes: u16,
+    adjust_on_corporate_action: bool,
+)]
 pub struct CreateSeries<'info> {
     #[account(mut)]
     pub creator: Signer<'info>,
@@ -53,12 +60,25 @@ pub struct CreateSeries<'info> {
         init,
         payer = creator,
         space = 8 + OptionSeries::INIT_SPACE,
+        // Every term a writer is exposed to is in the address. Creating a
+        // series a second time collides, which is the intent — but only if the
+        // terms that collide are the terms that matter. With the quote asset,
+        // the contract size, the window and the adjustment flag left out of the
+        // seeds, whoever listed first fixed all four for the canonical slot
+        // forever, and "AAPLx $340 call, expiry X" in a UI could be a contract
+        // quoted in a worthless token, one raw unit in size, with the strike
+        // adjustment switched off. Two different sets of terms are now two
+        // different series.
         seeds = [
             SERIES_SEED,
             underlying_mint.key().as_ref(),
+            quote_mint.key().as_ref(),
             &expiry_ts.to_le_bytes(),
             &strike0.to_le_bytes(),
+            &contract_raw_size.to_le_bytes(),
+            &settlement_window_minutes.to_le_bytes(),
             &[kind as u8],
+            &[adjust_on_corporate_action as u8],
         ],
         bump,
     )]
@@ -134,6 +154,20 @@ pub fn create_series(
     require!(strike0 > 0, DeliverableError::ZeroAmount);
     require!(contract_raw_size > 0, DeliverableError::ZeroAmount);
     require!(settlement_window_minutes > 0, DeliverableError::ZeroAmount);
+    // The window is measured by `open_minutes_between`, which saturates past
+    // MAX_SESSION_SCAN_DAYS. A window longer than that clock can count would
+    // not be a long window; it would be a window that ends at sixteen calendar
+    // days and says nothing about it.
+    require!(
+        settlement_window_minutes <= MAX_SETTLEMENT_WINDOW_MINUTES,
+        DeliverableError::SettlementWindowTooLong
+    );
+    // A series quoted in its own underlying is not a contract, it is a
+    // squatter's tool: it makes the canonical slot unlistable on honest terms.
+    require!(
+        ctx.accounts.quote_mint.key() != ctx.accounts.underlying_mint.key(),
+        DeliverableError::SelfQuotedSeries
+    );
     require!(expiry_ts > now, DeliverableError::ExpiryInThePast);
     // A contract that expires when the market is shut expires against a price
     // nobody can defend. The calendar already knows; refusing at listing is
@@ -176,6 +210,9 @@ pub fn create_series(
     series.premium_claimed_total = 0;
     series.window_opened_ts = 0;
     series.acknowledged_multiplier = multiplier.effective;
+    series.contracts_assigned_total = 0;
+    series.premium_per_contract_acc = 0;
+    series.premium_credited_total = 0;
 
     emit!(SeriesCreated {
         series: series.key(),
@@ -192,7 +229,26 @@ pub fn create_series(
 
 #[derive(Accounts)]
 pub struct AcknowledgeAdjustment<'info> {
-    #[account(mut)]
+    /// Derived from its own seeds like every other series account in the
+    /// program. The handler only writes a published number and the instruction
+    /// is deliberately permissionless, but "the one series account not checked
+    /// against its seeds" is the shape of finding the rest of this audit was
+    /// made of.
+    #[account(
+        mut,
+        seeds = [
+            SERIES_SEED,
+            series.underlying_mint.as_ref(),
+            series.quote_mint.as_ref(),
+            &series.expiry_ts.to_le_bytes(),
+            &series.strike0.to_le_bytes(),
+            &series.contract_raw_size.to_le_bytes(),
+            &series.settlement_window_minutes.to_le_bytes(),
+            &[series.kind as u8],
+            &[series.adjust_on_corporate_action as u8],
+        ],
+        bump = series.bump,
+    )]
     pub series: Box<Account<'info, OptionSeries>>,
     #[account(address = series.underlying_mint @ DeliverableError::MintMismatch)]
     pub underlying_mint: Box<InterfaceAccount<'info, Mint>>,

@@ -26,7 +26,8 @@ describe('refusal codes match error.rs', () => {
     expect(body, 'RefusalCode enum not found in error.rs').toBeDefined();
     const variants = [...body!.matchAll(/^\s*(\w+)\s*=\s*(\d+),/gm)].map((m) => [m[1]!, Number(m[2])] as const);
 
-    expect(variants).toHaveLength(9);
+    // Nine gate conditions plus the two read failures the probe records.
+    expect(variants).toHaveLength(11);
     expect(Object.fromEntries(variants)).toEqual(RefusalCode);
     for (const [name, code] of variants) {
       expect(REFUSALS[code as keyof typeof REFUSALS].name).toBe(name);
@@ -44,12 +45,15 @@ describe('refusal codes match error.rs', () => {
   });
 
   it('agrees with the IDL error table, which is what a failed transaction carries', () => {
-    for (let code = 1; code <= 9; code++) {
-      const info = REFUSALS[code as keyof typeof REFUSALS];
+    for (const info of Object.values(REFUSALS)) {
       const idlError = idl.errors.find((e) => e.code === info.errorCode);
-      expect(idlError).toEqual({ code: 6000 + code - 1, name: info.name, msg: info.message });
+      expect(idlError, info.name).toEqual({ code: info.errorCode, name: info.name, msg: info.message });
       expect(refusalFromErrorCode(info.errorCode)).toBe(info);
     }
+    // 6009 is InvalidMultiplier: an error, not a refusal. The two appended
+    // refusals carry their own error numbers rather than 6009 and 6010, because
+    // Anchor numbers its variants positionally and the nine above them are
+    // published integers that cannot move.
     expect(refusalFromErrorCode(6009)).toBeUndefined();
     expect(refusalFromErrorCode(5999)).toBeUndefined();
   });

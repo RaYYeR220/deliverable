@@ -36,9 +36,13 @@ use crate::state::{MarketCalendar, OptionSeries, SecurityState};
 /// compiling and not.
 pub struct SeriesSigner {
     underlying_mint: Pubkey,
+    quote_mint: Pubkey,
     expiry: [u8; 8],
     strike: [u8; 8],
+    raw_size: [u8; 8],
+    window: [u8; 2],
     kind: [u8; 1],
+    adjust: [u8; 1],
     bump: [u8; 1],
 }
 
@@ -46,20 +50,28 @@ impl SeriesSigner {
     pub fn new(series: &OptionSeries) -> Self {
         Self {
             underlying_mint: series.underlying_mint,
+            quote_mint: series.quote_mint,
             expiry: series.expiry_ts.to_le_bytes(),
             strike: series.strike0.to_le_bytes(),
+            raw_size: series.contract_raw_size.to_le_bytes(),
+            window: series.settlement_window_minutes.to_le_bytes(),
             kind: [series.kind as u8],
+            adjust: [series.adjust_on_corporate_action as u8],
             bump: [series.bump],
         }
     }
 
-    pub fn seeds(&self) -> [&[u8]; 6] {
+    pub fn seeds(&self) -> [&[u8]; 10] {
         [
             SERIES_SEED,
             self.underlying_mint.as_ref(),
+            self.quote_mint.as_ref(),
             &self.expiry,
             &self.strike,
+            &self.raw_size,
+            &self.window,
             &self.kind,
+            &self.adjust,
             &self.bump,
         ]
     }

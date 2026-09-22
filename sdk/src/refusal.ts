@@ -1,12 +1,17 @@
 /**
- * The nine refusal codes, mirrored from `programs/deliverable/src/error.rs`.
+ * The refusal codes, mirrored from `programs/deliverable/src/error.rs`.
  *
  * Two numberings exist and both are stable. `code` is the `RefusalCode` byte the
  * program writes into the `Refused` event and onto `SecurityState.last_refusal_code`.
- * `errorCode` is the Anchor error a refused instruction fails with: the refusals are
- * the first nine variants of `DeliverableError`, in the same order, so
- * `errorCode = 6000 + code - 1`. test/refusal-codes.test.ts parses error.rs and the
- * IDL and fails if either drifts.
+ * `errorCode` is the Anchor error a refused instruction fails with.
+ *
+ * The first nine are the original gate conditions and are the first nine variants of
+ * `DeliverableError`, in the same order, so `errorCode = 6000 + code - 1`. Codes 10
+ * and 11 were appended after the audit and their `DeliverableError` variants are
+ * appended too — Anchor numbers variants positionally, so a new refusal cannot be
+ * inserted without renumbering every published error above it, and the relation
+ * between the two numberings is therefore explicit for them.
+ * test/refusal-codes.test.ts parses error.rs and the IDL and fails if either drifts.
  */
 export const RefusalCode = {
   MarketClosed: 1,
@@ -18,6 +23,8 @@ export const RefusalCode = {
   HookAttached: 7,
   SourcesDisagree: 8,
   SingleSource: 9,
+  OracleUnreadable: 10,
+  MultiplierUnreadable: 11,
 } as const;
 
 export type RefusalName = keyof typeof RefusalCode;
@@ -36,9 +43,9 @@ export interface RefusalInfo {
 
 const ANCHOR_ERROR_BASE = 6000;
 
-function info(name: RefusalName, message: string, explanation: string): RefusalInfo {
+function info(name: RefusalName, message: string, explanation: string, errorCode?: number): RefusalInfo {
   const code = RefusalCode[name];
-  return { code, name, errorCode: ANCHOR_ERROR_BASE + code - 1, message, explanation };
+  return { code, name, errorCode: errorCode ?? ANCHOR_ERROR_BASE + code - 1, message, explanation };
 }
 
 export const REFUSALS: Readonly<Record<RefusalCodeValue, RefusalInfo>> = Object.freeze({
@@ -87,6 +94,18 @@ export const REFUSALS: Readonly<Record<RefusalCodeValue, RefusalInfo>> = Object.
     'Security is bound to a single price source and nothing corroborates it',
     'The security is registered against one price source, and one number nothing can contradict is not treated as a price.',
   ),
+  10: info(
+    'OracleUnreadable',
+    'Oracle account could not be read as the configured source',
+    'A bound price account could not be read at all: an unpublished entry, an account that is not the one this security is bound to, or an update past its own outer age bound. Distinct from OracleStale, which is a price we could read and would not act on. Recorded by probe_security, which stays total so the refusal ledger can count a feed that has stopped publishing.',
+    6033,
+  ),
+  11: info(
+    'MultiplierUnreadable',
+    'Mint multiplier could not be read',
+    'The mint\'s ScaledUiAmount multiplier could not be read or decoded, so there is no defensible re-cut of the strike.',
+    6034,
+  ),
 });
 
 /**
@@ -95,7 +114,7 @@ export const REFUSALS: Readonly<Record<RefusalCodeValue, RefusalInfo>> = Object.
  * that holds most of the week, and the issuer levers run before any oracle is read.
  * The test suite parses gate.rs and asserts this list against it.
  */
-export const GATE_CHECK_ORDER: readonly RefusalName[] = Object.freeze([
+const GATE_ORDER = [
   'MarketClosed',
   'Halted',
   'IssuerPaused',
@@ -105,13 +124,29 @@ export const GATE_CHECK_ORDER: readonly RefusalName[] = Object.freeze([
   'ConfidenceBlown',
   'SingleSource',
   'SourcesDisagree',
-]);
+] as const;
+
+/**
+ * The nine conditions the gate itself can refuse on, which is what the off-chain
+ * mirror in `gate.ts` evaluates. `OracleUnreadable` and `MultiplierUnreadable` are
+ * not among them: they are failures to *read* an input, recorded by
+ * `probe_security` so the ledger can count a feed that has stopped publishing, and
+ * an off-chain caller sees them as a decode error rather than as a verdict.
+ */
+export type GateRefusalName = (typeof GATE_ORDER)[number];
+
+export const GATE_CHECK_ORDER: readonly GateRefusalName[] = Object.freeze(GATE_ORDER);
 
 export function refusalInfo(code: number): RefusalInfo | undefined {
   return (REFUSALS as Record<number, RefusalInfo | undefined>)[code];
 }
 
-/** Map an Anchor error number from a failed transaction back to a refusal, if it is one. */
+/**
+ * Map an Anchor error number from a failed transaction back to a refusal, if it is
+ * one. A reverse lookup rather than arithmetic: the two refusals appended after the
+ * audit have `DeliverableError` variants at the end of the enum, so their error
+ * numbers are not `6000 + code - 1`.
+ */
 export function refusalFromErrorCode(errorCode: number): RefusalInfo | undefined {
-  return refusalInfo(errorCode - ANCHOR_ERROR_BASE + 1);
+  return Object.values(REFUSALS).find((info) => info.errorCode === errorCode);
 }

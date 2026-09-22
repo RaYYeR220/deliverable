@@ -13,7 +13,7 @@ import {
 } from '../src/gate.js';
 import type { OracleSource } from '../src/generated/index.js';
 import { decodeScopeEntry, divergenceBps, observationToNumber } from '../src/oracle.js';
-import { GATE_CHECK_ORDER, REFUSALS, RefusalCode, type RefusalName } from '../src/refusal.js';
+import { GATE_CHECK_ORDER, REFUSALS, RefusalCode, type GateRefusalName } from '../src/refusal.js';
 import { et, fixture } from './helpers.js';
 
 // A port of programs/deliverable/src/tests/gate_test.rs: one security that is actionable
@@ -53,7 +53,7 @@ function inputs(now: bigint = OPEN_MONDAY): GateInputs {
 type Breaker = (g: GateInputs) => GateInputs;
 
 /** One way to trip each refusal from an otherwise actionable Monday. */
-const BREAK: Record<RefusalName, Breaker> = {
+const BREAK: Record<GateRefusalName, Breaker> = {
   MarketClosed: (g) => ({ ...g, now: BigInt(et(2026, 11, 27, 15, 0)) }), // the half day, after 13:00
   Halted: (g) => ({ ...g, halt: { halted: true } }),
   IssuerPaused: (g) => ({ ...g, mintPaused: true }),
@@ -65,7 +65,7 @@ const BREAK: Record<RefusalName, Breaker> = {
   SourcesDisagree: (g) => ({ ...g, secondary: { source: SCOPE_SECONDARY, observation: { ...g.secondary!.observation, price: price(350) } } }),
 };
 
-function expectRefusal(verdict: GateVerdict, name: RefusalName) {
+function expectRefusal(verdict: GateVerdict, name: GateRefusalName) {
   expect(verdict.actionable).toBe(false);
   if (verdict.actionable) return;
   expect(verdict.name).toBe(name);
@@ -84,7 +84,7 @@ describe('checkActionable mirrors gate.rs', () => {
     expectRefusal(checkActionable(g), 'MarketClosed');
   });
 
-  for (const name of Object.keys(BREAK) as RefusalName[]) {
+  for (const name of Object.keys(BREAK) as GateRefusalName[]) {
     it(`returns ${name} (code ${RefusalCode[name]}) when only that condition holds`, () => {
       expectRefusal(checkActionable(BREAK[name](inputs())), name);
     });

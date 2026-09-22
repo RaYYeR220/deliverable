@@ -117,6 +117,13 @@ export type OpenPositionAsyncInput<
     InstructionAccountInput,
 > = {
   writer: TAccountWriter;
+  /**
+   * Derived from its own seeds, like every other series account. It is only
+   * ever read here, and the position PDA is seeded by `series.key()` so a
+   * forged series would produce a different position — but "the one series
+   * account not checked against its seeds" is not a distinction worth
+   * keeping, and `constraints_test` now enforces that there are none.
+   */
   series: TAccountSeries;
   position?: TAccountPosition;
   systemProgram?: TAccountSystemProgram;
@@ -242,6 +249,13 @@ export type OpenPositionInput<
     InstructionAccountInput,
 > = {
   writer: TAccountWriter;
+  /**
+   * Derived from its own seeds, like every other series account. It is only
+   * ever read here, and the position PDA is seeded by `series.key()` so a
+   * forged series would produce a different position — but "the one series
+   * account not checked against its seeds" is not a distinction worth
+   * keeping, and `constraints_test` now enforces that there are none.
+   */
   series: TAccountSeries;
   position: TAccountPosition;
   systemProgram?: TAccountSystemProgram;
@@ -349,6 +363,13 @@ export type ParsedOpenPositionInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     writer: TAccountMetas[0];
+    /**
+     * Derived from its own seeds, like every other series account. It is only
+     * ever read here, and the position PDA is seeded by `series.key()` so a
+     * forged series would produce a different position — but "the one series
+     * account not checked against its seeds" is not a distinction worth
+     * keeping, and `constraints_test` now enforces that there are none.
+     */
     series: TAccountMetas[1];
     position: TAccountMetas[2];
     systemProgram: TAccountMetas[3];

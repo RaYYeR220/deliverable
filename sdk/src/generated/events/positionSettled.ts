@@ -43,6 +43,16 @@ export type PositionSettledEvent = {
   contractsAssigned: bigint;
   rawReturned: bigint;
   quotePaid: bigint;
+  /**
+   * Raw units this writer was owed and the vault could not pay.
+   *
+   * Zero for every ordinary settlement: assignment conserves, so the vault
+   * holds exactly what the unassigned writers are owed. It can only be
+   * non-zero if the underlying left the vault by a route this program does
+   * not control — a permanent-delegate seizure — and in that case it must be
+   * on the wire rather than absorbed silently by whoever settles last.
+   */
+  rawShortfall: bigint;
 };
 
 export type PositionSettledEventArgs = {
@@ -51,6 +61,16 @@ export type PositionSettledEventArgs = {
   contractsAssigned: number | bigint;
   rawReturned: number | bigint;
   quotePaid: number | bigint;
+  /**
+   * Raw units this writer was owed and the vault could not pay.
+   *
+   * Zero for every ordinary settlement: assignment conserves, so the vault
+   * holds exactly what the unassigned writers are owed. It can only be
+   * non-zero if the underlying left the vault by a route this program does
+   * not control — a permanent-delegate seizure — and in that case it must be
+   * on the wire rather than absorbed silently by whoever settles last.
+   */
+  rawShortfall: number | bigint;
 };
 
 /** Gets the encoder for {@link PositionSettledEventArgs} event data. */
@@ -62,6 +82,7 @@ export function getPositionSettledEventEncoder(): FixedSizeEncoder<PositionSettl
       ["contractsAssigned", getU64Encoder()],
       ["rawReturned", getU64Encoder()],
       ["quotePaid", getU64Encoder()],
+      ["rawShortfall", getU64Encoder()],
     ]),
     [getConstantEncoder(POSITION_SETTLED_EVENT_DISCRIMINATOR)],
   );
@@ -76,6 +97,7 @@ export function getPositionSettledEventDecoder(): FixedSizeDecoder<PositionSettl
       ["contractsAssigned", getU64Decoder()],
       ["rawReturned", getU64Decoder()],
       ["quotePaid", getU64Decoder()],
+      ["rawShortfall", getU64Decoder()],
     ]),
     [getConstantDecoder(POSITION_SETTLED_EVENT_DISCRIMINATOR)],
   );

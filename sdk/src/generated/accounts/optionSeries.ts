@@ -120,6 +120,34 @@ export type OptionSeries = {
   windowOpenedTs: bigint;
   /** The multiplier the last `acknowledge_adjustment` reported. */
   acknowledgedMultiplier: bigint;
+  /**
+   * Contracts already assigned to writers who have settled.
+   *
+   * Assignment has to sum to exactly `contracts_exercised`: pro rata over
+   * integers rounds *every* writer down, so the writers collectively reclaim
+   * more raw collateral than the vault holds and whoever settles after it
+   * dries takes the loss. The running total is what makes the sum exact.
+   */
+  contractsAssignedTotal: bigint;
+  /**
+   * Premium accrued per contract since the series was listed, scaled by
+   * [`SCALE`], monotonic.
+   *
+   * Premium is time-weighted rather than split by the book as it stands at
+   * claim time: an accumulator that only ever moves forward, credited before
+   * `contracts_written` changes, means a writer can claim exactly the
+   * premium that arrived while their contracts were outstanding and nothing
+   * else. Splitting by the instantaneous book let a writer who arrived after
+   * the premium did take a share of it, in the same transaction that opened
+   * their position.
+   */
+  premiumPerContractAcc: bigint;
+  /**
+   * Premium already folded into the accumulator. The difference between this
+   * and the live pool is what the next accrual credits, so the remainder
+   * integer division leaves behind rolls forward instead of stranding.
+   */
+  premiumCreditedTotal: bigint;
 };
 
 export type OptionSeriesArgs = {
@@ -178,6 +206,34 @@ export type OptionSeriesArgs = {
   windowOpenedTs: number | bigint;
   /** The multiplier the last `acknowledge_adjustment` reported. */
   acknowledgedMultiplier: number | bigint;
+  /**
+   * Contracts already assigned to writers who have settled.
+   *
+   * Assignment has to sum to exactly `contracts_exercised`: pro rata over
+   * integers rounds *every* writer down, so the writers collectively reclaim
+   * more raw collateral than the vault holds and whoever settles after it
+   * dries takes the loss. The running total is what makes the sum exact.
+   */
+  contractsAssignedTotal: number | bigint;
+  /**
+   * Premium accrued per contract since the series was listed, scaled by
+   * [`SCALE`], monotonic.
+   *
+   * Premium is time-weighted rather than split by the book as it stands at
+   * claim time: an accumulator that only ever moves forward, credited before
+   * `contracts_written` changes, means a writer can claim exactly the
+   * premium that arrived while their contracts were outstanding and nothing
+   * else. Splitting by the instantaneous book let a writer who arrived after
+   * the premium did take a share of it, in the same transaction that opened
+   * their position.
+   */
+  premiumPerContractAcc: number | bigint;
+  /**
+   * Premium already folded into the accumulator. The difference between this
+   * and the live pool is what the next accrual credits, so the remainder
+   * integer division leaves behind rolls forward instead of stranding.
+   */
+  premiumCreditedTotal: number | bigint;
 };
 
 /** Gets the encoder for {@link OptionSeriesArgs} account data. */
@@ -209,6 +265,9 @@ export function getOptionSeriesEncoder(): FixedSizeEncoder<OptionSeriesArgs> {
       ["premiumClaimedTotal", getU64Encoder()],
       ["windowOpenedTs", getI64Encoder()],
       ["acknowledgedMultiplier", getU128Encoder()],
+      ["contractsAssignedTotal", getU64Encoder()],
+      ["premiumPerContractAcc", getU128Encoder()],
+      ["premiumCreditedTotal", getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: OPTION_SERIES_DISCRIMINATOR }),
   );
@@ -242,6 +301,9 @@ export function getOptionSeriesDecoder(): FixedSizeDecoder<OptionSeries> {
     ["premiumClaimedTotal", getU64Decoder()],
     ["windowOpenedTs", getI64Decoder()],
     ["acknowledgedMultiplier", getU128Decoder()],
+    ["contractsAssignedTotal", getU64Decoder()],
+    ["premiumPerContractAcc", getU128Decoder()],
+    ["premiumCreditedTotal", getU64Decoder()],
   ]);
 }
 
@@ -307,5 +369,5 @@ export async function fetchAllMaybeOptionSeries(
 }
 
 export function getOptionSeriesSize(): number {
-  return 367;
+  return 399;
 }

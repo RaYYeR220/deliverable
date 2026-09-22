@@ -36,8 +36,13 @@ pub fn f64_bits_to_fixed(bits: u64) -> Result<u128> {
 
     let out = if shift >= 0 {
         require!(shift < 64, DeliverableError::InvalidMultiplier);
+        // Not `checked_shl`: `u128::checked_shl` only rejects a shift *amount*
+        // of 128 or more, and says nothing about significant bits leaving the
+        // top of the word. Above roughly 2^87 the shift wrapped modulo 2^128
+        // and the program's view of the multiplier silently diverged from
+        // Token-2022's. Multiplying by the same power of two overflows instead.
         scaled
-            .checked_shl(shift as u32)
+            .checked_mul(1u128 << shift)
             .ok_or(DeliverableError::MathOverflow)?
     } else {
         let s = (-shift) as u32;

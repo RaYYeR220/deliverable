@@ -248,8 +248,13 @@ cargo test --manifest-path programs/deliverable/Cargo.toml
 
 Tests run under LiteSVM against **real mainnet account dumps** — the real AAPLx mint with its real
 multiplier, the real Scope oracle account. There is no mock oracle: the only Scope account the tests
-accept is the real dump, and the tests that plant a copy under another owner do so to show the
-program rejects it. The program, the SDK and the tests use real mints only. The one stand-in token in
+accept is the real dump, and the tests that plant copies of it — under another owner, and under the
+real owner at another address — do so to show the program rejects both. That second case used to be
+a hole rather than a test: `oracle::observe` bound the Scope account by owner only, so any
+Scope-owned account was an acceptable price source. It is now bound by address, discriminator and
+length, the way the Pyth adapter is bound by `feed_id`, and
+`security_test::a_correctly_owned_scope_account_at_the_wrong_address_is_refused` holds it there. The
+program, the SDK and the tests use real mints only. The one stand-in token in
 the repository is in `market/`: devnet has no xStocks, so the devnet run of the series market quotes
 in a Token-2022 stand-in with 8 decimals (`AAPLd`). Everything that reads or targets mainnet uses the
 real mints ([`MOCKS.md`](MOCKS.md)).
@@ -261,6 +266,10 @@ See [`MOCKS.md`](MOCKS.md) for the exact line between what is real and what is a
 not-claimed list. In short: covered calls only, European exercise, no implied-volatility model, no
 liquidation engine, and no compliance gate — xStocks are bearer tokens with off-chain eligibility
 and we do not pretend otherwise.
+
+[`AUDIT.md`](AUDIT.md) is our own adversarial audit of this program: eleven findings, five of them
+able to move other people's money, what each one was fixed with, the tests that now guard them, and
+what is still exposed.
 
 ## Licence
 

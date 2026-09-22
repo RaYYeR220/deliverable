@@ -103,6 +103,13 @@ export type AcknowledgeAdjustmentInput<
   TAccountUnderlyingMint extends InstructionAccountInput =
     InstructionAccountInput,
 > = {
+  /**
+   * Derived from its own seeds like every other series account in the
+   * program. The handler only writes a published number and the instruction
+   * is deliberately permissionless, but "the one series account not checked
+   * against its seeds" is the shape of finding the rest of this audit was
+   * made of.
+   */
   series: TAccountSeries;
   underlyingMint: TAccountUnderlyingMint;
 };
@@ -171,6 +178,13 @@ export type ParsedAcknowledgeAdjustmentInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
+    /**
+     * Derived from its own seeds like every other series account in the
+     * program. The handler only writes a published number and the instruction
+     * is deliberately permissionless, but "the one series account not checked
+     * against its seeds" is the shape of finding the rest of this audit was
+     * made of.
+     */
     series: TAccountMetas[0];
     underlyingMint: TAccountMetas[1];
   };

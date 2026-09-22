@@ -9,7 +9,10 @@ use anchor_lang::prelude::*;
 
 use crate::constants::{CALENDAR_SEED, REGISTRY_SEED};
 use crate::error::DeliverableError;
-use crate::state::{CalendarEntry, MarketCalendar, Registry, MAX_CALENDAR_ENTRIES};
+use crate::state::{
+    CalendarEntry, MarketCalendar, Registry, ENTRY_CLOSED, ENTRY_EARLY_CLOSE,
+    MAX_CALENDAR_ENTRIES,
+};
 
 #[derive(Accounts)]
 pub struct InitRegistry<'info> {
@@ -112,8 +115,47 @@ pub fn append_calendar_entries(
     entries: Vec<CalendarEntry>,
 ) -> Result<()> {
     let calendar = &mut ctx.accounts.calendar;
+    // The calendar is the one input the README calls trustless, and an
+    // unvalidated append is the wrong shape for that claim: a `date_key` of
+    // month 0 or day 99 is a row that can never fire, and an `EarlyClose(5000)`
+    // is a day that opens at 09:30 and never closes. Authority-only, so this
+    // was a footgun rather than a vulnerability — but the authority is a key we
+    // hold, which is exactly why the program should not take its word for it.
+    for entry in &entries {
+        let year = entry.date_key >> 16;
+        let month = (entry.date_key >> 8) & 0xff;
+        let day = entry.date_key & 0xff;
+        require!(
+            (2000..=2200).contains(&year)
+                && (1..=12).contains(&month)
+                && (1..=31).contains(&day),
+            DeliverableError::ZeroAmount
+        );
+        require!(
+            entry.kind == ENTRY_CLOSED || entry.kind == ENTRY_EARLY_CLOSE,
+            DeliverableError::ZeroAmount
+        );
+        if entry.kind == ENTRY_EARLY_CLOSE {
+            require!(
+                entry.close_minute > calendar.regular_open_minute
+                    && entry.close_minute <= calendar.regular_close_minute,
+                DeliverableError::ZeroAmount
+            );
+        }
+    }
+    // Counting replacements as additions rejected a call that corrects
+    // existing half-days even though nothing would be added.
+    let additions = entries
+        .iter()
+        .filter(|entry| {
+            !calendar
+                .entries
+                .iter()
+                .any(|existing| existing.date_key == entry.date_key)
+        })
+        .count();
     require!(
-        calendar.entries.len() + entries.len() <= MAX_CALENDAR_ENTRIES,
+        calendar.entries.len() + additions <= MAX_CALENDAR_ENTRIES,
         DeliverableError::CalendarFull
     );
     for entry in entries {

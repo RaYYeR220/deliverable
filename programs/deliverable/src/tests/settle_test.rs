@@ -274,11 +274,16 @@ fn premium_cannot_be_claimed_by_someone_who_did_not_write() {
     let instruction = ix(
         crate::accounts::ClaimPremium {
             writer: super::venue::anchor_key(venue.holder.pubkey()),
+            registry: venue.registry,
+            security: venue.security,
+            calendar: venue.calendar,
             series: venue.series,
             position: venue.position,
             underlying_mint: venue.underlying(),
             premium_vault: venue.premium_vault,
             writer_underlying: super::venue::anchor_key(venue.holder_underlying),
+            primary_oracle: crate::constants::SCOPE_PRICES,
+            secondary_oracle: crate::constants::SCOPE_PRICES,
             underlying_token_program: super::venue::token_2022_id(),
         },
         crate::instruction::ClaimPremium {},

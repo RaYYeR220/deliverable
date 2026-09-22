@@ -78,6 +78,20 @@ export const DELIVERABLE_ERROR__NOT_AUTHORITY = 0x178d; // 6029
 export const DELIVERABLE_ERROR__NOT_ATTESTOR = 0x178e; // 6030
 /** NotPositionOwner: Signer does not own this position */
 export const DELIVERABLE_ERROR__NOT_POSITION_OWNER = 0x178f; // 6031
+/** MultiplierOutOfBand: Multiplier has moved too far since listing to re-cut the strike */
+export const DELIVERABLE_ERROR__MULTIPLIER_OUT_OF_BAND = 0x1790; // 6032
+/** OracleUnreadable: Oracle account could not be read as the configured source */
+export const DELIVERABLE_ERROR__ORACLE_UNREADABLE = 0x1791; // 6033
+/** MultiplierUnreadable: Mint multiplier could not be read */
+export const DELIVERABLE_ERROR__MULTIPLIER_UNREADABLE = 0x1792; // 6034
+/** SettlementWindowPostponed: Settlement window has not elapsed in actionable minutes yet */
+export const DELIVERABLE_ERROR__SETTLEMENT_WINDOW_POSTPONED = 0x1793; // 6035
+/** SelfQuotedSeries: Quote mint and underlying mint must differ */
+export const DELIVERABLE_ERROR__SELF_QUOTED_SERIES = 0x1794; // 6036
+/** SettlementWindowTooLong: Settlement window is longer than the session clock can measure */
+export const DELIVERABLE_ERROR__SETTLEMENT_WINDOW_TOO_LONG = 0x1795; // 6037
+/** SourcesNotIndependent: A security must be bound to two distinct price sources */
+export const DELIVERABLE_ERROR__SOURCES_NOT_INDEPENDENT = 0x1796; // 6038
 
 export type DeliverableError =
   | typeof DELIVERABLE_ERROR__CALENDAR_FULL
@@ -94,22 +108,29 @@ export type DeliverableError =
   | typeof DELIVERABLE_ERROR__MATH_OVERFLOW
   | typeof DELIVERABLE_ERROR__MINT_MISMATCH
   | typeof DELIVERABLE_ERROR__MISSING_SCALED_UI_AMOUNT
+  | typeof DELIVERABLE_ERROR__MULTIPLIER_OUT_OF_BAND
   | typeof DELIVERABLE_ERROR__MULTIPLIER_PENDING
+  | typeof DELIVERABLE_ERROR__MULTIPLIER_UNREADABLE
   | typeof DELIVERABLE_ERROR__NOT_ATTESTOR
   | typeof DELIVERABLE_ERROR__NOT_AUTHORITY
   | typeof DELIVERABLE_ERROR__NOTHING_TO_SETTLE
   | typeof DELIVERABLE_ERROR__NOT_POSITION_OWNER
   | typeof DELIVERABLE_ERROR__ORACLE_SOURCE_MISMATCH
   | typeof DELIVERABLE_ERROR__ORACLE_STALE
+  | typeof DELIVERABLE_ERROR__ORACLE_UNREADABLE
   | typeof DELIVERABLE_ERROR__PREMIUM_ALREADY_CLAIMED
   | typeof DELIVERABLE_ERROR__PUTS_NOT_SUPPORTED
   | typeof DELIVERABLE_ERROR__REGISTRY_PAUSED
   | typeof DELIVERABLE_ERROR__SCOPE_INDEX_OUT_OF_RANGE
   | typeof DELIVERABLE_ERROR__SECURITY_MISMATCH
+  | typeof DELIVERABLE_ERROR__SELF_QUOTED_SERIES
   | typeof DELIVERABLE_ERROR__SETTLEMENT_WINDOW_CLOSED
   | typeof DELIVERABLE_ERROR__SETTLEMENT_WINDOW_NOT_OPEN
+  | typeof DELIVERABLE_ERROR__SETTLEMENT_WINDOW_POSTPONED
+  | typeof DELIVERABLE_ERROR__SETTLEMENT_WINDOW_TOO_LONG
   | typeof DELIVERABLE_ERROR__SINGLE_SOURCE
   | typeof DELIVERABLE_ERROR__SOURCES_DISAGREE
+  | typeof DELIVERABLE_ERROR__SOURCES_NOT_INDEPENDENT
   | typeof DELIVERABLE_ERROR__WRONG_SERIES_STATE
   | typeof DELIVERABLE_ERROR__ZERO_AMOUNT;
 
@@ -130,22 +151,29 @@ if (process.env["NODE_ENV"] !== "production") {
     [DELIVERABLE_ERROR__MATH_OVERFLOW]: `Fixed-point arithmetic overflowed`,
     [DELIVERABLE_ERROR__MINT_MISMATCH]: `Mint does not match the one this account was opened against`,
     [DELIVERABLE_ERROR__MISSING_SCALED_UI_AMOUNT]: `Mint does not carry the ScaledUiAmount extension`,
+    [DELIVERABLE_ERROR__MULTIPLIER_OUT_OF_BAND]: `Multiplier has moved too far since listing to re-cut the strike`,
     [DELIVERABLE_ERROR__MULTIPLIER_PENDING]: `A corporate action is pending on this mint`,
+    [DELIVERABLE_ERROR__MULTIPLIER_UNREADABLE]: `Mint multiplier could not be read`,
     [DELIVERABLE_ERROR__NOT_ATTESTOR]: `Signer is not the registered halt attestor`,
     [DELIVERABLE_ERROR__NOT_AUTHORITY]: `Signer is not the registry authority`,
     [DELIVERABLE_ERROR__NOTHING_TO_SETTLE]: `Nothing left to settle for this position`,
     [DELIVERABLE_ERROR__NOT_POSITION_OWNER]: `Signer does not own this position`,
     [DELIVERABLE_ERROR__ORACLE_SOURCE_MISMATCH]: `Oracle account does not match the configured source`,
     [DELIVERABLE_ERROR__ORACLE_STALE]: `Price is stale inside an open session`,
+    [DELIVERABLE_ERROR__ORACLE_UNREADABLE]: `Oracle account could not be read as the configured source`,
     [DELIVERABLE_ERROR__PREMIUM_ALREADY_CLAIMED]: `Premium has already been claimed`,
     [DELIVERABLE_ERROR__PUTS_NOT_SUPPORTED]: `Only covered calls are written by this venue`,
     [DELIVERABLE_ERROR__REGISTRY_PAUSED]: `Registry is paused`,
     [DELIVERABLE_ERROR__SCOPE_INDEX_OUT_OF_RANGE]: `Scope price index is out of range`,
     [DELIVERABLE_ERROR__SECURITY_MISMATCH]: `Account does not belong to this security`,
+    [DELIVERABLE_ERROR__SELF_QUOTED_SERIES]: `Quote mint and underlying mint must differ`,
     [DELIVERABLE_ERROR__SETTLEMENT_WINDOW_CLOSED]: `Settlement window has closed`,
     [DELIVERABLE_ERROR__SETTLEMENT_WINDOW_NOT_OPEN]: `Settlement window has not opened yet`,
+    [DELIVERABLE_ERROR__SETTLEMENT_WINDOW_POSTPONED]: `Settlement window has not elapsed in actionable minutes yet`,
+    [DELIVERABLE_ERROR__SETTLEMENT_WINDOW_TOO_LONG]: `Settlement window is longer than the session clock can measure`,
     [DELIVERABLE_ERROR__SINGLE_SOURCE]: `Security is bound to a single price source and nothing corroborates it`,
     [DELIVERABLE_ERROR__SOURCES_DISAGREE]: `Price sources disagree beyond the allowed divergence`,
+    [DELIVERABLE_ERROR__SOURCES_NOT_INDEPENDENT]: `A security must be bound to two distinct price sources`,
     [DELIVERABLE_ERROR__WRONG_SERIES_STATE]: `Series is not in a state that allows this action`,
     [DELIVERABLE_ERROR__ZERO_AMOUNT]: `Contract size, strike or amount is zero`,
   };

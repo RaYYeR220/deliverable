@@ -31,28 +31,52 @@ import {
  */
 export type HaltState = {
   halted: boolean;
-  /** When the halt began, as reported by the source. */
+  /**
+   * When the halt began, as reported by the source. Kept after the halt is
+   * lifted, because a settlement window has to be able to subtract the
+   * minutes it covered — otherwise clearing a halt erases the evidence that
+   * it was ever set.
+   */
   sinceTs: bigint;
   /**
-   * When the attestor signed it. Stale attestations are the attestor's
-   * problem to refresh, not something we silently expire.
+   * When the attestor signed it. Read, not decorative: an attestation older
+   * than [`crate::constants::HALT_ATTESTATION_MAX_AGE_SECS`] has stopped
+   * being a claim about the present and the gate stops honouring it.
    */
   attestedTs: bigint;
   /** Which feed the attestation came from. */
   source: number;
+  /**
+   * When the halt stopped being in force, zero while it is in force. Set by
+   * an explicit clear; a halt that is simply never refreshed ends on its own
+   * at `attested_ts + HALT_ATTESTATION_MAX_AGE_SECS`.
+   */
+  liftedTs: bigint;
 };
 
 export type HaltStateArgs = {
   halted: boolean;
-  /** When the halt began, as reported by the source. */
+  /**
+   * When the halt began, as reported by the source. Kept after the halt is
+   * lifted, because a settlement window has to be able to subtract the
+   * minutes it covered — otherwise clearing a halt erases the evidence that
+   * it was ever set.
+   */
   sinceTs: number | bigint;
   /**
-   * When the attestor signed it. Stale attestations are the attestor's
-   * problem to refresh, not something we silently expire.
+   * When the attestor signed it. Read, not decorative: an attestation older
+   * than [`crate::constants::HALT_ATTESTATION_MAX_AGE_SECS`] has stopped
+   * being a claim about the present and the gate stops honouring it.
    */
   attestedTs: number | bigint;
   /** Which feed the attestation came from. */
   source: number;
+  /**
+   * When the halt stopped being in force, zero while it is in force. Set by
+   * an explicit clear; a halt that is simply never refreshed ends on its own
+   * at `attested_ts + HALT_ATTESTATION_MAX_AGE_SECS`.
+   */
+  liftedTs: number | bigint;
 };
 
 export function getHaltStateEncoder(): FixedSizeEncoder<HaltStateArgs> {
@@ -61,6 +85,7 @@ export function getHaltStateEncoder(): FixedSizeEncoder<HaltStateArgs> {
     ["sinceTs", getI64Encoder()],
     ["attestedTs", getI64Encoder()],
     ["source", getU8Encoder()],
+    ["liftedTs", getI64Encoder()],
   ]);
 }
 
@@ -70,6 +95,7 @@ export function getHaltStateDecoder(): FixedSizeDecoder<HaltState> {
     ["sinceTs", getI64Decoder()],
     ["attestedTs", getI64Decoder()],
     ["source", getU8Decoder()],
+    ["liftedTs", getI64Decoder()],
   ]);
 }
 

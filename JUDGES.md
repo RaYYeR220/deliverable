@@ -89,7 +89,7 @@ session     Regular  (US equity calendar, 12 exceptions, the program's own rule)
 cargo test --manifest-path programs/deliverable/Cargo.toml
 ```
 
-You should see `test result: ok. 108 passed; 0 failed; 0 ignored`. On our machine a warm rebuild
+You should see `test result: ok. 141 passed; 0 failed; 0 ignored`. On our machine a warm rebuild
 finished in about 15 seconds. A cold build compiles the dependency tree first and takes longer. The
 tests run under LiteSVM against real mainnet account dumps (hashes are in [PROOF.md](PROOF.md)).
 Three are worth reading:
@@ -159,7 +159,9 @@ reads the same multipliers from the live mints.
 [`MOCKS.md`](MOCKS.md) draws the line between what is real and what is a convention.
 [`CLAIMS.md`](CLAIMS.md) tags every public statement with its evidence tier, lists what we do not
 claim, and lists the sentences we could not support as worded. [`PROOF.md`](PROOF.md) has one link
-per verifiable item.
+per verifiable item. [`AUDIT.md`](AUDIT.md) is our own adversarial audit of the program — eleven
+findings, the fixes, the tests in `audit_test.rs` that now guard each one, and the items we have not
+closed.
 
 ---
 

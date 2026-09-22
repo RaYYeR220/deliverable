@@ -10,7 +10,10 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::Mint;
 
 use crate::calendar::{resolve_session, Session};
-use crate::constants::{CALENDAR_SEED, REGISTRY_SEED, SECURITY_SEED};
+use crate::constants::{
+    CALENDAR_SEED, MAX_REGISTERED_DIVERGENCE_BPS, MAX_REGISTERED_PRICE_AGE_SECS, REGISTRY_SEED,
+    SECURITY_SEED,
+};
 use crate::error::{DeliverableError, RefusalCode};
 use crate::gate::{check_actionable, emit_refusal, GateInputs, HaltState};
 use crate::mint_guards::read_mint_guards;
@@ -67,6 +70,27 @@ pub fn register_security(
 
     require!(max_price_age > 0, DeliverableError::ZeroAmount);
     require!(max_divergence_bps > 0, DeliverableError::ZeroAmount);
+    // Bounded above as well as below. `u32::MAX` was accepted for both, which
+    // makes the staleness and divergence refusals decorative for that security
+    // — and there is no update instruction, so it is decorative forever.
+    require!(
+        max_price_age <= MAX_REGISTERED_PRICE_AGE_SECS,
+        DeliverableError::ZeroAmount
+    );
+    require!(
+        max_divergence_bps <= MAX_REGISTERED_DIVERGENCE_BPS,
+        DeliverableError::ZeroAmount
+    );
+    // "Two independently-sourced entries" was a guarantee in prose with no code
+    // behind it: `Pair { Scope{317}, Scope{317} }` registered fine and gave a
+    // divergence of zero forever, so the corroboration requirement passed
+    // vacuously. The gate only ever checked that a secondary was *present*.
+    if let Some(secondary) = sources.secondary() {
+        require!(
+            secondary != sources.primary(),
+            DeliverableError::SourcesNotIndependent
+        );
+    }
 
     let security = &mut ctx.accounts.security;
     security.underlying_mint = mint.key();
@@ -119,9 +143,11 @@ pub struct ReadSecurity<'info> {
     pub security: Box<Account<'info, SecurityState>>,
     #[account(address = security.underlying_mint @ DeliverableError::MintMismatch)]
     pub underlying_mint: Box<InterfaceAccount<'info, Mint>>,
-    /// CHECK: identified and decoded by `oracle::observe` against the source
-    /// this security was registered with; an account from the wrong program is
-    /// rejected there.
+    /// CHECK: decoded by `oracle::observe` against the source this security was
+    /// registered with, which checks the account's **address**, its owning
+    /// program, its discriminator and its length before reading a byte of it.
+    /// Unchecked here and checked there because the adapter is chosen by the
+    /// registration, not by the account list.
     pub primary_oracle: UncheckedAccount<'info>,
     /// CHECK: as above. Pass `primary_oracle` again for a security registered
     /// with a single declared source — it is never read in that case, and the
@@ -206,11 +232,27 @@ pub fn attest_halt(
 ) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     let security = &mut ctx.accounts.security;
-    security.halt = HaltState {
-        halted,
-        since_ts,
-        attested_ts: now,
-        source,
+    let previous = security.halt;
+    security.halt = if halted {
+        HaltState {
+            halted: true,
+            since_ts,
+            attested_ts: now,
+            source,
+            lifted_ts: 0,
+        }
+    } else {
+        // Clearing a halt records when it ended and keeps when it began. An
+        // open settlement window has to be able to subtract the minutes a halt
+        // covered *after* the halt is gone, or clearing one erases the evidence
+        // that it consumed a window — which is the whole attack.
+        HaltState {
+            halted: false,
+            since_ts: previous.since_ts,
+            attested_ts: now,
+            source,
+            lifted_ts: if previous.halted { now } else { previous.lifted_ts },
+        }
     };
     emit!(HaltAttested {
         security: security.key(),
@@ -263,23 +305,47 @@ pub fn probe_security(ctx: Context<ProbeSecurity>) -> Result<()> {
     let mint = &ctx.accounts.underlying_mint;
     let security = &ctx.accounts.security;
 
-    let multiplier = read_multiplier(mint, now)?;
+    // Every read below is fallible, and a read that fails *hard* — an
+    // unpublished Scope slot, a Pyth update past its own outer bound, a mint we
+    // cannot decode — used to revert this instruction. That made the refusal
+    // ledger unable to count the one condition the venue exists to advertise:
+    // a feed that has stopped publishing. The probe has to be total, so each
+    // read becomes a refusal code rather than an error.
+    let Ok(multiplier) = read_multiplier(mint, now) else {
+        return record_refusal(
+            &mut ctx.accounts.security,
+            RefusalCode::MultiplierUnreadable,
+            now,
+        );
+    };
     let guards = read_mint_guards(mint)?;
     let primary_source = security.sources.primary();
-    let primary = observe(
+    let Ok(primary) = observe(
         &primary_source,
         &ctx.accounts.primary_oracle.to_account_info(),
         now,
-    )?;
+    ) else {
+        return record_refusal(
+            &mut ctx.accounts.security,
+            RefusalCode::OracleUnreadable,
+            now,
+        );
+    };
     let secondary = match security.sources.secondary() {
-        Some(source) => Some((
-            source,
-            observe(
+        Some(source) => {
+            let Ok(observation) = observe(
                 &source,
                 &ctx.accounts.secondary_oracle.to_account_info(),
                 now,
-            )?,
-        )),
+            ) else {
+                return record_refusal(
+                    &mut ctx.accounts.security,
+                    RefusalCode::OracleUnreadable,
+                    now,
+                );
+            };
+            Some((source, observation))
+        }
         None => None,
     };
 

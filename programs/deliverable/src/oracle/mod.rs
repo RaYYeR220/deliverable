@@ -11,7 +11,7 @@ pub mod scope;
 
 use anchor_lang::prelude::*;
 
-use crate::constants::SCOPE_PROGRAM;
+use crate::constants::{SCOPE_PRICES, SCOPE_PROGRAM};
 use crate::error::DeliverableError;
 use crate::fixed::mul_div_floor;
 
@@ -95,6 +95,17 @@ impl OracleBinding {
 pub fn observe(source: &OracleSource, acct: &AccountInfo, now: i64) -> Result<Observation> {
     match source {
         OracleSource::Scope { index } => {
+            // Address first, then owner. "Owned by Scope" identifies a program,
+            // not an account: Scope hosts several `OraclePrices` feeds and the
+            // same index carries an unrelated asset in each, so an owner check
+            // alone accepts any of them — and any other Scope-owned account
+            // type whose bytes happen to decode. The Pyth adapter binds its
+            // account by `feed_id`; this is the same bind, by address.
+            require_keys_eq!(
+                acct.key(),
+                SCOPE_PRICES,
+                DeliverableError::OracleSourceMismatch
+            );
             require_keys_eq!(
                 *acct.owner,
                 SCOPE_PROGRAM,

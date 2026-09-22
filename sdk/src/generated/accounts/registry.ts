@@ -49,21 +49,37 @@ export function getRegistryDiscriminatorBytes(): ReadonlyUint8Array {
 
 export type Registry = {
   discriminator: ReadonlyUint8Array;
-  /** May create calendars, register securities and repoint oracle sources. */
+  /**
+   * May create calendars and register securities. It may **not** repoint a
+   * security's oracle sources: `security.sources` is written once at
+   * registration and there is no instruction to change it.
+   */
   authority: Address;
   /** The only key whose halt attestations the program accepts. */
   attestor: Address;
-  /** Kill switch. Set it and every gated action refuses. */
+  /**
+   * Kill switch. Set it and every gated action refuses — which is every
+   * value-moving instruction except `settle_expired`, deliberately, so that
+   * pausing the venue cannot strand a writer's collateral.
+   */
   paused: boolean;
   bump: number;
 };
 
 export type RegistryArgs = {
-  /** May create calendars, register securities and repoint oracle sources. */
+  /**
+   * May create calendars and register securities. It may **not** repoint a
+   * security's oracle sources: `security.sources` is written once at
+   * registration and there is no instruction to change it.
+   */
   authority: Address;
   /** The only key whose halt attestations the program accepts. */
   attestor: Address;
-  /** Kill switch. Set it and every gated action refuses. */
+  /**
+   * Kill switch. Set it and every gated action refuses — which is every
+   * value-moving instruction except `settle_expired`, deliberately, so that
+   * pausing the venue cannot strand a writer's collateral.
+   */
   paused: boolean;
   bump: number;
 };

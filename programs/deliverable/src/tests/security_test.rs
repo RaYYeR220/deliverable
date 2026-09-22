@@ -281,6 +281,10 @@ fn a_security_is_its_mint_and_cannot_be_registered_twice() {
 
 /// A copy of the real Scope account, owned by some other program. `observe()`
 /// rejects it, so any instruction that reads it fails.
+///
+/// This fixture rewrites the **owner**, which is why it could never see F-01:
+/// the hole was an account with the *right* owner at the *wrong* address. See
+/// [`plant_correctly_owned_impostor`], which is the version that could.
 fn plant_impostor_oracle(venue: &mut Venue) -> Pubkey {
     let impostor = SvmPubkey::new_unique();
     let mut account = venue
@@ -290,6 +294,75 @@ fn plant_impostor_oracle(venue: &mut Venue) -> Pubkey {
     account.owner = SvmPubkey::new_unique();
     venue.svm.set_account(impostor, account).unwrap();
     Pubkey::new_from_array(impostor.to_bytes())
+}
+
+/// A byte-for-byte copy of the real Scope account under the **real** Scope
+/// program, at a different address.
+///
+/// Right owner, right discriminator, right length, right prices: everything
+/// the program used to check, and none of it is identity. Scope hosts several
+/// `OraclePrices` feeds — five were live on mainnet when this was written, and
+/// 150 indices were populated in the bound feed and simultaneously fresh in a
+/// sibling with completely unrelated prices — so this is not a manufactured
+/// account, it is the shape of one that already exists.
+fn plant_correctly_owned_impostor(venue: &mut Venue) -> Pubkey {
+    let impostor = SvmPubkey::new_unique();
+    let account = venue
+        .svm
+        .get_account(&SvmPubkey::from(SCOPE_PRICES.to_bytes()))
+        .unwrap();
+    venue.svm.set_account(impostor, account).unwrap();
+    Pubkey::new_from_array(impostor.to_bytes())
+}
+
+#[test]
+fn a_correctly_owned_scope_account_at_the_wrong_address_is_refused() {
+    let mut venue = Venue::rail(VenueConfig::default());
+    let impostor = plant_correctly_owned_impostor(&mut venue);
+
+    // Nothing distinguishes it from the bound feed except its address.
+    let real = venue
+        .svm
+        .get_account(&SvmPubkey::from(SCOPE_PRICES.to_bytes()))
+        .unwrap();
+    let planted = venue
+        .svm
+        .get_account(&SvmPubkey::from(impostor.to_bytes()))
+        .unwrap();
+    assert_eq!(planted.owner, real.owner, "the real Scope program");
+    assert_eq!(planted.data, real.data, "byte for byte");
+
+    // The rail refuses to publish from it...
+    let instruction = ix(
+        crate::accounts::ReadSecurity {
+            security: venue.security,
+            underlying_mint: venue.underlying(),
+            primary_oracle: impostor,
+            secondary_oracle: impostor,
+        },
+        crate::instruction::SyncSecurity {},
+    );
+    let authority = venue.authority.insecure_clone();
+    let refused = send(&mut venue.svm, &[instruction], &authority, &[])
+        .expect_err("an unbound Scope feed is not this security's price");
+    assert!(
+        refused
+            .meta
+            .logs
+            .iter()
+            .any(|l| l.contains("OracleSourceMismatch")),
+        "{:?}",
+        refused.meta.logs
+    );
+
+    // ...and the gate records it as a read it could not make, rather than
+    // acting on a price from an account nobody bound.
+    let meta = probe_with_oracle(&mut venue, impostor).expect("the probe records rather than reverts");
+    assert_eq!(
+        refusal_code_in_logs(&meta.logs),
+        Some(RefusalCode::OracleUnreadable as u8)
+    );
+    assert_eq!(venue.security_state().synced_ts, 0, "nothing was published");
 }
 
 fn probe_with_oracle(venue: &mut Venue, oracle: Pubkey) -> TxResult {
@@ -334,12 +407,22 @@ fn a_closed_market_is_refused_before_any_oracle_is_read() {
 fn the_same_impostor_oracle_is_rejected_once_the_market_is_open() {
     // Negative control for the test above. Without it, that test would also pass
     // if the impostor were simply never rejected by anything.
+    //
+    // The probe is total — it has to be, or the refusal ledger cannot record the
+    // one condition it exists for — so "rejected" here is a recorded refusal
+    // rather than a reverted transaction. The distinction the control is making
+    // is still the one that matters: on a Sunday the answer is `MarketClosed`
+    // and the account is never read; in an open session the account is read,
+    // and this one is not the oracle this security is bound to.
     let mut venue = Venue::rail(VenueConfig::default());
     let impostor = plant_impostor_oracle(&mut venue);
-    assert!(
-        probe_with_oracle(&mut venue, impostor).is_err(),
+    let meta = probe_with_oracle(&mut venue, impostor).expect("the probe records rather than reverts");
+    assert_eq!(
+        refusal_code_in_logs(&meta.logs),
+        Some(RefusalCode::OracleUnreadable as u8),
         "an open market must read the oracle, and this one is not Scope"
     );
+    assert_eq!(venue.security_state().refusals, 1);
 }
 
 #[test]

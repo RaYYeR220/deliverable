@@ -22,6 +22,13 @@
       "accounts": [
         {
           "name": "series",
+          "docs": [
+            "Derived from its own seeds like every other series account in the",
+            "program. The handler only writes a published number and the instruction",
+            "is deliberately permissionless, but \"the one series account not checked",
+            "against its seeds\" is the shape of finding the rest of this audit was",
+            "made of."
+          ],
           "writable": true
         },
         {
@@ -187,6 +194,83 @@
           "signer": true
         },
         {
+          "name": "registry",
+          "docs": [
+            "Claiming premium moves the underlying share — the same asset as the",
+            "collateral — out of a series-owned vault, so it takes the same gate and",
+            "the same kill switch every other value-moving path takes. It used to",
+            "take neither, which made \"set it and every gated action refuses\" false",
+            "of the one instruction that could empty a vault while the venue was",
+            "paused, the market shut and a hook attached."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "security",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  117,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "underlying_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "calendar",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  108,
+                  101,
+                  110,
+                  100,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "calendar.id",
+                "account": "MarketCalendar"
+              }
+            ]
+          }
+        },
+        {
           "name": "series",
           "writable": true
         },
@@ -247,6 +331,15 @@
         {
           "name": "writer_underlying",
           "writable": true
+        },
+        {
+          "name": "primary_oracle",
+          "docs": [
+            "registered with, which binds the account by address as well as by owner."
+          ]
+        },
+        {
+          "name": "secondary_oracle"
         },
         {
           "name": "underlying_token_program"
@@ -830,7 +923,14 @@
           "signer": true
         },
         {
-          "name": "series"
+          "name": "series",
+          "docs": [
+            "Derived from its own seeds, like every other series account. It is only",
+            "ever read here, and the position PDA is seeded by `series.key()` so a",
+            "forged series would produce a different position — but \"the one series",
+            "account not checked against its seeds\" is not a distinction worth",
+            "keeping, and `constraints_test` now enforces that there are none."
+          ]
         },
         {
           "name": "position",
@@ -1170,6 +1270,38 @@
           "signer": true
         },
         {
+          "name": "security",
+          "docs": [
+            "Carried for one reason: without it there is nothing to bind the calendar",
+            "to. `OptionSeries` does not store a calendar id, so the only check on",
+            "the account that decides whether the exercise window has run out was",
+            "that it is *a* calendar — and a writer who hands in one that says the",
+            "window is over takes the collateral back before any holder can exercise."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  117,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series.underlying_mint",
+                "account": "OptionSeries"
+              }
+            ]
+          }
+        },
+        {
           "name": "calendar",
           "pda": {
             "seeds": [
@@ -1300,8 +1432,10 @@
         {
           "name": "primary_oracle",
           "docs": [
-            "this security was registered with; an account from the wrong program is",
-            "rejected there."
+            "registered with, which checks the account's **address**, its owning",
+            "program, its discriminator and its length before reading a byte of it.",
+            "Unchecked here and checked there because the adapter is chosen by the",
+            "registration, not by the account list."
           ]
         },
         {
@@ -1407,6 +1541,35 @@
         },
         {
           "name": "underlying_mint"
+        },
+        {
+          "name": "premium_vault",
+          "docs": [
+            "The premium vault's balance is half of the accumulator's input, so it",
+            "has to be present at every write: premium that arrived before these",
+            "contracts existed must be credited to the writers who carried the",
+            "obligation for it *before* the denominator moves."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  101,
+                  109,
+                  105,
+                  117,
+                  109
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              }
+            ]
+          }
         },
         {
           "name": "option_mint",
@@ -1828,6 +1991,41 @@
       "code": 6031,
       "name": "NotPositionOwner",
       "msg": "Signer does not own this position"
+    },
+    {
+      "code": 6032,
+      "name": "MultiplierOutOfBand",
+      "msg": "Multiplier has moved too far since listing to re-cut the strike"
+    },
+    {
+      "code": 6033,
+      "name": "OracleUnreadable",
+      "msg": "Oracle account could not be read as the configured source"
+    },
+    {
+      "code": 6034,
+      "name": "MultiplierUnreadable",
+      "msg": "Mint multiplier could not be read"
+    },
+    {
+      "code": 6035,
+      "name": "SettlementWindowPostponed",
+      "msg": "Settlement window has not elapsed in actionable minutes yet"
+    },
+    {
+      "code": 6036,
+      "name": "SelfQuotedSeries",
+      "msg": "Quote mint and underlying mint must differ"
+    },
+    {
+      "code": 6037,
+      "name": "SettlementWindowTooLong",
+      "msg": "Settlement window is longer than the session clock can measure"
+    },
+    {
+      "code": 6038,
+      "name": "SourcesNotIndependent",
+      "msg": "A security must be bound to two distinct price sources"
     }
   ],
   "types": [
@@ -1842,12 +2040,18 @@
           {
             "name": "date_key",
             "docs": [
-              "`(month << 8) | day`. Pyth publishes its schedule as bare MMDD, so a",
-              "calendar covers the twelve-month window it was committed for and the",
-              "authority appends the next one rather than the program guessing when a",
-              "moveable holiday lands."
+              "`(year << 16) | (month << 8) | day`.",
+              "",
+              "The year is load-bearing. Pyth publishes its schedule as bare MMDD, and",
+              "keying on that meant every entry fired in every subsequent year until",
+              "somebody rewrote the table: Labor Day 2026 is 7 September, so in 2027 an",
+              "ordinary Tuesday read as closed — and Labor Day 2027 is the 6th, which",
+              "was not in the table at all, so the program reported a regular session",
+              "on a day the exchange was shut. The second direction is the dangerous",
+              "one: the session gate passes and the refusal falls through to a",
+              "staleness check that a weekend-fresh timestamp satisfies."
             ],
-            "type": "u16"
+            "type": "u32"
           },
           {
             "name": "kind",
@@ -1973,15 +2177,19 @@
           {
             "name": "since_ts",
             "docs": [
-              "When the halt began, as reported by the source."
+              "When the halt began, as reported by the source. Kept after the halt is",
+              "lifted, because a settlement window has to be able to subtract the",
+              "minutes it covered — otherwise clearing a halt erases the evidence that",
+              "it was ever set."
             ],
             "type": "i64"
           },
           {
             "name": "attested_ts",
             "docs": [
-              "When the attestor signed it. Stale attestations are the attestor's",
-              "problem to refresh, not something we silently expire."
+              "When the attestor signed it. Read, not decorative: an attestation older",
+              "than [`crate::constants::HALT_ATTESTATION_MAX_AGE_SECS`] has stopped",
+              "being a claim about the present and the gate stops honouring it."
             ],
             "type": "i64"
           },
@@ -1991,6 +2199,15 @@
               "Which feed the attestation came from."
             ],
             "type": "u8"
+          },
+          {
+            "name": "lifted_ts",
+            "docs": [
+              "When the halt stopped being in force, zero while it is in force. Set by",
+              "an explicit clear; a halt that is simply never refreshed ends on its own",
+              "at `attested_ts + HALT_ATTESTATION_MAX_AGE_SECS`."
+            ],
+            "type": "i64"
           }
         ]
       }
@@ -2250,6 +2467,43 @@
               "The multiplier the last `acknowledge_adjustment` reported."
             ],
             "type": "u128"
+          },
+          {
+            "name": "contracts_assigned_total",
+            "docs": [
+              "Contracts already assigned to writers who have settled.",
+              "",
+              "Assignment has to sum to exactly `contracts_exercised`: pro rata over",
+              "integers rounds *every* writer down, so the writers collectively reclaim",
+              "more raw collateral than the vault holds and whoever settles after it",
+              "dries takes the loss. The running total is what makes the sum exact."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "premium_per_contract_acc",
+            "docs": [
+              "Premium accrued per contract since the series was listed, scaled by",
+              "[`SCALE`], monotonic.",
+              "",
+              "Premium is time-weighted rather than split by the book as it stands at",
+              "claim time: an accumulator that only ever moves forward, credited before",
+              "`contracts_written` changes, means a writer can claim exactly the",
+              "premium that arrived while their contracts were outstanding and nothing",
+              "else. Splitting by the instantaneous book let a writer who arrived after",
+              "the premium did take a share of it, in the same transaction that opened",
+              "their position."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "premium_credited_total",
+            "docs": [
+              "Premium already folded into the accumulator. The difference between this",
+              "and the live pool is what the next accrual credits, so the remainder",
+              "integer division leaves behind rolls forward instead of stranding."
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -2371,6 +2625,19 @@
           {
             "name": "quote_paid",
             "type": "u64"
+          },
+          {
+            "name": "raw_shortfall",
+            "docs": [
+              "Raw units this writer was owed and the vault could not pay.",
+              "",
+              "Zero for every ordinary settlement: assignment conserves, so the vault",
+              "holds exactly what the unassigned writers are owed. It can only be",
+              "non-zero if the underlying left the vault by a route this program does",
+              "not control — a permanent-delegate seizure — and in that case it must be",
+              "on the wire rather than absorbed silently by whoever settles last."
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -2426,7 +2693,9 @@
           {
             "name": "authority",
             "docs": [
-              "May create calendars, register securities and repoint oracle sources."
+              "May create calendars and register securities. It may **not** repoint a",
+              "security's oracle sources: `security.sources` is written once at",
+              "registration and there is no instruction to change it."
             ],
             "type": "pubkey"
           },
@@ -2440,7 +2709,9 @@
           {
             "name": "paused",
             "docs": [
-              "Kill switch. Set it and every gated action refuses."
+              "Kill switch. Set it and every gated action refuses — which is every",
+              "value-moving instruction except `settle_expired`, deliberately, so that",
+              "pausing the venue cannot strand a writer's collateral."
             ],
             "type": "bool"
           },
@@ -2793,6 +3064,19 @@
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "premium_debt",
+            "docs": [
+              "The accumulator level this position is paid up to, scaled by [`SCALE`].",
+              "",
+              "Raised on every write, by the accumulator's value at that moment times",
+              "the contracts written, so premium that arrived before those contracts",
+              "existed is not claimable against them. This is the whole of the",
+              "time-weighting: without it, writing one contract a second before expiry",
+              "bought a pro-rata share of every premium the series had ever earned."
+            ],
+            "type": "u128"
           }
         ]
       }

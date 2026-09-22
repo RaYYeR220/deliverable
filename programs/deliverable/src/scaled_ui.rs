@@ -33,6 +33,29 @@ pub struct MintMultiplier {
     pub epoch_key: i64,
 }
 
+impl MintMultiplier {
+    /// The interval over which the quiet period refuses for this mint's most
+    /// recent scheduled change, whether or not it has landed yet.
+    ///
+    /// Reconstructible after the fact, which is the point: Token-2022 keeps
+    /// `new_multiplier_effective_timestamp` on the mint once the change takes
+    /// force, so a settlement window can subtract the minutes the quiet period
+    /// ate long after the refusal itself has stopped. Without that, a routine
+    /// dividend accrual scheduled inside a window silently expires every
+    /// in-the-money option in it.
+    pub fn quiet_interval(&self) -> Option<(i64, i64)> {
+        let effective_ts = match self.pending {
+            Some((_, ts)) => ts,
+            None if self.epoch_key != 0 => self.epoch_key,
+            None => return None,
+        };
+        Some((
+            effective_ts.saturating_sub(crate::constants::MULTIPLIER_QUIET_PERIOD_SECS),
+            effective_ts,
+        ))
+    }
+}
+
 /// Read the effective multiplier off a live Token-2022 mint account.
 ///
 /// Called inline wherever the multiplier matters, so nothing can be stale: the
@@ -67,7 +90,18 @@ pub fn effective_from_cfg(cfg: &ScaledUiAmountConfig, now: i64) -> Result<MintMu
     if now >= effective_ts {
         Ok(MintMultiplier {
             effective: new,
-            pending: None,
+            // A change stamped effective *now* used to land with no refusal at
+            // all: `pending` went to `None` the instant it took force, so the
+            // quiet period only ever saw changes the issuer scheduled ahead.
+            // The change is therefore still reported as pending through the
+            // instant it lands, and the venue declines to act in the same
+            // second a corporate action takes effect.
+            //
+            // The window is that instant and no wider. Refusing for a period
+            // *after* the fact would itself consume a settlement window — the
+            // exact harm F-10 is about — so a change stamped in the past
+            // remains undetectable from the mint alone. See MOCKS.md.
+            pending: (now == effective_ts).then_some((new, effective_ts)),
             epoch_key: effective_ts,
         })
     } else {
