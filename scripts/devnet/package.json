@@ -1,0 +1,33 @@
+{
+  "name": "@stocklana/devnet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Devnet deployment of the Deliverable program: registry, calendar, a Token-2022 stand-in mint, and refusal probes against real Pyth equity updates.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "init": "tsx init.ts",
+    "mint": "tsx create-standin-mint.ts",
+    "register": "tsx register.ts",
+    "probe": "tsx probe.ts",
+    "read": "tsx read.ts"
+  },
+  "dependencies": {
+    "@pythnetwork/hermes-client": "3.1.0",
+    "@pythnetwork/pyth-solana-receiver": "0.16.0",
+    "@solana/spl-token": "0.4.15",
+    "@solana/spl-token-metadata": "0.1.6",
+    "@solana/web3.js": "1.98.4"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "@solana/web3.js": "1.98.4"
+    }
+  }
+}

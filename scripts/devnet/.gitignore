@@ -1,0 +1,3 @@
+node_modules/
+# Keypairs are generated locally and never committed.
+keys/

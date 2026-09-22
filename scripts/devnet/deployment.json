@@ -1,0 +1,131 @@
+{
+  "cluster": "devnet",
+  "programId": "DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa",
+  "deploy": {
+    "command": "solana program deploy target/deploy/deliverable.so --program-id target/deploy/deliverable-keypair.json --buffer <buffer-keypair> --use-rpc --max-sign-attempts 100 --with-compute-unit-price 10000 --url <devnet>",
+    "build": "anchor build --tools-version v1.52 --arch v0",
+    "soBytes": 428928,
+    "soSha256": "93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41",
+    "onchainDumpSha256": "93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41",
+    "signature": "9CFe4pXu8WMq7KpMDG17hV5kM7TWe8r7HiD43j1Ca3hFcqRQMji5VtzY46nVpBd3PKenMaqty5BQpeXwYAQkLkP",
+    "slot": 502514997,
+    "programData": "7BWNhWUjQgKn9ZBAWiyUcyriYrYz8Y8vy7q8NJ4JR2Mi",
+    "upgradeAuthority": "4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo",
+    "walletLamportsBefore": 11246332597,
+    "walletLamportsAfter": 9062904269,
+    "lamportsSpent": 2183428328,
+    "programDataRentLamports": 2179833080,
+    "programAccountRentLamports": 833120,
+    "note": "The first attempt without --buffer failed mid-write (Data writes to account failed: Max retries exceeded); its buffer was closed and the rent recovered, costing 495000 lamports in fees. Included in lamportsSpent."
+  },
+  "transactions": [
+    {
+      "label": "init_registry",
+      "signature": "39oAup6YT18KApkUURkbjzQpawMp8FvjfzesfJyrQ33SLvrtuFGFzk6yTBVXeBdvKdDXPTZHdvP2ypcaj3jdcf6R",
+      "slot": 502516936,
+      "blockTime": 1790095465
+    },
+    {
+      "label": "init_calendar",
+      "signature": "3LnaPtkxwjgXdiKJqHw2abcTv7Ue9PdFGeXmt4HrvASGSew2fLe4Fnrf7BXwmf6KNM73EkVxvzUmR1D39YCJgLW9",
+      "slot": 502516943,
+      "blockTime": 1790095467
+    },
+    {
+      "label": "append_calendar_entries",
+      "signature": "4zS5NwHnhVgBQZy4UrQh3iqfQQmXN6mgH6AHN4yFqrfwDvbAGiLwxSk8zj59AyMqSgNrfYMJf9tyg9qvY7hBY4U9",
+      "slot": 502516948,
+      "blockTime": 1790095467
+    },
+    {
+      "label": "create_standin_mint",
+      "signature": "DYATy4kzM5JAZ6LEiopUJbYi6NFRfAzRozdDVKuKArPaBiG3rsdeek5qPWb71i5EfPcJmp5ef9VFRsGQLgcDZJ4",
+      "slot": 502517384,
+      "blockTime": 1790095539
+    },
+    {
+      "label": "standin_mint_metadata",
+      "signature": "3MBnpNE3kuHBu3A3E4Rjc7rT2ea8jBz6rhRNNCjoNhGkarJ1whxkYFhYHE1aVZBRfAQxb1JhJiMJFcYH2NJpzH3U",
+      "slot": 502517392,
+      "blockTime": 1790095541
+    },
+    {
+      "label": "register_security",
+      "signature": "2pxKXtjZNqS4hiT5oHpmoBrYHAXHYkZGPqtJaunUXQMsEt7sW7sYYmXhhZ5bn6YwK4Bh6wiPxaYMMuT3DB9e7Gvn",
+      "slot": 502517597,
+      "blockTime": 1790095575
+    },
+    {
+      "label": "probe(open): wormhole encoded VAA (init, write, verify) [1/2]",
+      "signature": "5tb3KoaZoNLNKDM6YKaAWTwpwDFjFk3EmkGtuyyAeGM7vinpRe3Jkbe9kX3kydhhyT5WcSjGyt6WiheRWxQjVMjQ",
+      "slot": 502518356,
+      "blockTime": 1790095701
+    },
+    {
+      "label": "probe(open): pyth post_update + sync_security + probe_security [2/2]",
+      "signature": "3oVqe7QsoC6jLAHSzfXcr66nMgzSEaUrgWjvsEpxktSjMUxjA9BVe7ZUKrqz6AUpUT4TNb6cjJ2etWMeTFA7AukR",
+      "slot": 502518364,
+      "blockTime": 1790095703
+    }
+  ],
+  "registry": "DiK3Y7ZCK7n1ftXXQ6fboChc6MiiVhJdTu6GxCJf36Ls",
+  "calendar": "GcsF2uRFUydCCFEU1nDDr7NYj19iisojcshgzk1btNAF",
+  "attestor": "J1uaVh6BAendk4hWRnZhNadWKsypa9uT4o8swqTJv5Tu",
+  "authority": "4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo",
+  "standinMint": "8AWMhkJ61ifBkkKsXMNYoCb8HmthjRaQk5kjBMCQjq32",
+  "security": "4d8cqHM7UZgJnqbifntNa8GkLnpL89UPPpj2a3WUJ2fT",
+  "binding": {
+    "kind": "SingleDeclared",
+    "primary": {
+      "kind": "Pyth",
+      "feed": "Equity.US.AAPL/USD",
+      "feedId": "0x49f6b65cb1de6b10eaf75e7c03ca029c306d0357e91b5311b175084a5ad55688",
+      "maxAge": 3600
+    },
+    "maxPriceAge": 60,
+    "maxConfBps": 100,
+    "maxDivergenceBps": 150
+  },
+  "probes": [
+    {
+      "mode": "open",
+      "code": 9,
+      "signatures": [
+        {
+          "label": "wormhole encoded VAA (init, write, verify) [1/2]",
+          "signature": "5tb3KoaZoNLNKDM6YKaAWTwpwDFjFk3EmkGtuyyAeGM7vinpRe3Jkbe9kX3kydhhyT5WcSjGyt6WiheRWxQjVMjQ",
+          "createdAccounts": [
+            "HgDKQvNGjS7NDTw7yiyJz4eSMS1LC2dkJ5Zex4utKPZM"
+          ]
+        },
+        {
+          "label": "pyth post_update + sync_security + probe_security [2/2]",
+          "signature": "3oVqe7QsoC6jLAHSzfXcr66nMgzSEaUrgWjvsEpxktSjMUxjA9BVe7ZUKrqz6AUpUT4TNb6cjJ2etWMeTFA7AukR",
+          "createdAccounts": [
+            "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9"
+          ]
+        }
+      ],
+      "priceUpdateAccount": "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9",
+      "hermes": {
+        "price": "34243997",
+        "conf": "2997",
+        "expo": -5,
+        "publishTime": 1790095701
+      },
+      "onchainUpdate": {
+        "verificationLevel": "Full",
+        "price": "34243997",
+        "conf": "2997",
+        "exponent": -5,
+        "publishTime": "1790095701",
+        "postedSlot": "502518364"
+      },
+      "session": "Regular",
+      "chainClock": 1790095700,
+      "refusalsAfter": 1,
+      "lastRefusalCode": 9,
+      "lastRefusalTs": "1790095703"
+    }
+  ]
+}
