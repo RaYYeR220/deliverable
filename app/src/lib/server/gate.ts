@@ -22,7 +22,7 @@ import {
   type Observation,
   type OracleBinding,
   type OracleSource,
-  type RefusalName,
+  type GateRefusalName,
 } from '@stocklana/sdk';
 
 import { solscan, type Cluster } from '@/lib/config';
@@ -57,7 +57,9 @@ export interface GateEvaluation {
   registryPaused: boolean | null;
 }
 
-const CHECK_TITLE: Record<RefusalName, string> = {
+// Keyed by the nine conditions the gate evaluates. Codes 10 and 11 are read
+// failures recorded by probe_security, not verdicts, so they are not rows here.
+const CHECK_TITLE: Record<GateRefusalName, string> = {
   MarketClosed: 'Session',
   Halted: 'Halt',
   IssuerPaused: 'Issuer pause',
@@ -134,7 +136,7 @@ export function buildGateView(e: GateEvaluation): GateView {
   const secondaryObservation = e.secondary;
   const apart = secondaryObservation ? guarded(() => divergenceBps(e.primary, secondaryObservation)) : null;
 
-  const cells: Record<RefusalName, Cell> = {
+  const cells: Record<GateRefusalName, Cell> = {
     MarketClosed:
       session === 'Closed'
         ? {
