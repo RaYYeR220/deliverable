@@ -19,9 +19,10 @@ import {
   type ScopeLabel,
 } from '@stocklana/sdk';
 
-import { CLUSTER, CLUSTER_LABEL, SECURITIES } from '@/lib/config';
+import { CLUSTER, CLUSTER_LABEL, DEVNET_LIVE, SECURITIES } from '@/lib/config';
 import type { BasisRow, BasisView, GateView, RailSnapshot, Sourced } from '@/lib/types';
 
+import { readDevnetState } from './devnet';
 import { BASIS_FEEDS, JUPITER_PRICE_V3, perShareBasis } from './feeds';
 import { buildGateView, labelMap, lastClose } from './gate';
 import { deliverable, describeFailure, PROGRAM_ADDRESS, SourceUnavailable, type Address } from './rpc';
@@ -176,6 +177,14 @@ async function readBasis(): Promise<BasisView> {
 }
 
 async function buildRail(mode: 'live' | 'preview'): Promise<RailSnapshot> {
+  // Live against the devnet deployment reads that program's own state. The mainnet
+  // securities are not registered under it, so no gate is evaluated for them here; the
+  // basis below is the same mainnet reading Preview makes, and is labelled as mainnet.
+  if (mode === 'live' && DEVNET_LIVE) {
+    const [devnet, basis] = await Promise.all([settle(readDevnetState()), settle(readBasis())]);
+    return { mode, readAt: Date.now(), gates: [], basis, devnet };
+  }
+
   const [gates, basis] = await Promise.all([
     Promise.all(
       SECURITIES.map(async (security) => ({
@@ -186,7 +195,7 @@ async function buildRail(mode: 'live' | 'preview'): Promise<RailSnapshot> {
     ),
     settle(readBasis()),
   ]);
-  return { mode, readAt: Date.now(), gates, basis };
+  return { mode, readAt: Date.now(), gates, basis, devnet: null };
 }
 
 // Every viewer polls; one read per mode per ten seconds is shared between them so the

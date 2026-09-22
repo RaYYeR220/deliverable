@@ -5,7 +5,9 @@ import { Adjustments } from '@/components/instrument/adjustment';
 import { Ledger } from '@/components/instrument/ledger';
 import { Rail } from '@/components/instrument/rail';
 import { SeriesPanel } from '@/components/instrument/series';
+import { DEVNET_LIVE } from '@/lib/config';
 import { buildAdjustments } from '@/lib/server/adjustment';
+import { devnetRecord } from '@/lib/server/devnet';
 import { LEDGER_FILE, readLedger } from '@/lib/server/ledger';
 import { buildReplay } from '@/lib/server/replay';
 
@@ -22,6 +24,9 @@ export const metadata: Metadata = {
 export default async function InstrumentPage() {
   const ledger = readLedger();
   const [replay, adjustments] = await Promise.all([buildReplay(), Promise.resolve(buildAdjustments(ledger))]);
+  // The deployment record is read here, at build time, like every other repository
+  // record on this page. What the deployed program holds is read live, per request.
+  const devnet = DEVNET_LIVE ? devnetRecord() : null;
   const splits = ledger.filter((r) => r.classification === 'split').length;
   const inWindow = ledger.filter((r) => r.inWindow).length;
 
@@ -42,7 +47,7 @@ export default async function InstrumentPage() {
           </p>
         </header>
 
-        <Rail replay={replay} />
+        <Rail replay={replay} devnet={devnet} />
 
         <section id="adjustment" className="i-section" aria-labelledby="adjustment-title">
           <p className="sect-mark">III &middot; THE ADJUSTMENT</p>

@@ -3,18 +3,22 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { CLUSTER, CLUSTER_LABEL, PROGRAM_ID, PROGRAM_ID_INVALID, SECURITIES, solscan } from '@/lib/config';
+import { CLUSTER, CLUSTER_LABEL, DEVNET_LIVE, explorer, PROGRAM_ID, PROGRAM_ID_INVALID, SECURITIES, solscan } from '@/lib/config';
 import { etTime, span, utc } from '@/lib/format';
-import type { BasisView, RailSnapshot, ReplayData } from '@/lib/types';
+import type { BasisView, DevnetRecord, RailSnapshot, ReplayData } from '@/lib/types';
 
 import { Basis } from './basis';
+import { DevnetTablet } from './devnet';
 import { GateTablet } from './gate-tablet';
 import { Addr } from './segments';
 
 type Mode = 'live' | 'preview' | 'replay';
 
 const POLL_MS = 30_000;
-const DEFAULT_MODE: Mode = PROGRAM_ID ? 'live' : 'preview';
+// Preview opens first even when a deployment exists: it runs the whole gate against the real
+// AAPLx and NVDAx mints on mainnet, which is what the venue is for. Live is one click away and
+// is the proof that the deployed program rules the same way.
+const DEFAULT_MODE: Mode = 'preview';
 
 function modeFromUrl(): Mode | null {
   const value = new URLSearchParams(window.location.search).get('mode');
@@ -23,7 +27,7 @@ function modeFromUrl(): Mode | null {
   return null;
 }
 
-export function Rail({ replay }: { replay: ReplayData }) {
+export function Rail({ replay, devnet }: { replay: ReplayData; devnet: DevnetRecord | null }) {
   const [mode, setMode] = useState<Mode>(DEFAULT_MODE);
   const [snapshot, setSnapshot] = useState<RailSnapshot | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -107,11 +111,27 @@ export function Rail({ replay }: { replay: ReplayData }) {
   }, []);
 
   const current = mode === 'replay' ? null : snapshot && snapshot.mode === mode ? snapshot : null;
+  // Live against a devnet deployment reads that program's own state instead of the
+  // mainnet gates: the mainnet securities are not registered under it.
+  const onDevnet = mode === 'live' && DEVNET_LIVE && devnet !== null;
+  const devnetState = onDevnet ? (current?.devnet ?? null) : null;
   const gates = mode === 'replay' ? replay.gates : SECURITIES.map((s) => current?.gates.find((g) => g.symbol === s.symbol) ?? { symbol: s.symbol, mint: s.mint, result: null });
   const basis = mode === 'replay' ? replay.basis : (current?.basis ?? null);
   const chainClock = current?.gates.find((g) => g.result?.ok)?.result;
-  const nothingRead = current !== null && !current.basis.ok && current.gates.every((g) => !g.result.ok);
-  const clock = mode === 'replay' ? replay.clock : chainClock && chainClock.ok ? chainClock.value.evaluatedAt : current?.basis.ok ? current.basis.value.at : null;
+  const nothingRead =
+    current !== null &&
+    !current.basis.ok &&
+    (onDevnet ? !current.devnet?.ok : current.gates.every((g) => !g.result.ok));
+  const clock =
+    mode === 'replay'
+      ? replay.clock
+      : devnetState?.ok
+        ? devnetState.value.chainClock
+        : chainClock && chainClock.ok
+          ? chainClock.value.evaluatedAt
+          : current?.basis.ok
+            ? current.basis.value.at
+            : null;
 
   const modeWord = mode === 'replay' ? 'REPLAY' : mode === 'live' ? 'LIVE' : 'PREVIEW';
 
@@ -150,7 +170,15 @@ export function Rail({ replay }: { replay: ReplayData }) {
         </div>
 
         <p className="i-mode-line" aria-live="polite">
-          {mode === 'live' ? (
+          {mode === 'live' && onDevnet ? (
+            <>
+              <strong>Live &middot; devnet.</strong> The program at{' '}
+              <Addr address={PROGRAM_ID ?? ''} href={explorer('address', PROGRAM_ID ?? '', 'devnet')} /> on Solana
+              devnet, read now from its own accounts: the SecurityState it wrote, the stand-in mint it is registered
+              against, the registry and the devnet chain clock. The verdict below is not recomputed here &mdash; it is
+              the refusal code the program itself recorded on chain.
+            </>
+          ) : mode === 'live' ? (
             <>
               <strong>Live.</strong> The program at{' '}
               <Addr address={PROGRAM_ID ?? ''} href={solscan('account', PROGRAM_ID ?? '', CLUSTER)} /> on{' '}
@@ -160,9 +188,11 @@ export function Rail({ replay }: { replay: ReplayData }) {
           ) : mode === 'preview' ? (
             <>
               <strong>Preview.</strong>{' '}
-              {PROGRAM_ID
-                ? 'The gate on preview terms, for comparison with Live: the SDK runs it on the live mint, the live Scope prices and the chain clock, under the committed calendar and the program’s default tolerances.'
-                : 'The program is not deployed yet, so the SDK runs its gate on the live mint, the live Scope prices and the chain clock, under the committed calendar and the program’s default tolerances.'}{' '}
+              {DEVNET_LIVE
+                ? 'The program is deployed on devnet, not on mainnet, so here the SDK runs its gate on the live mint, the live Scope prices and the chain clock, under the committed calendar and the program’s default tolerances.'
+                : PROGRAM_ID
+                  ? 'The gate on preview terms, for comparison with Live: the SDK runs it on the live mint, the live Scope prices and the chain clock, under the committed calendar and the program’s default tolerances.'
+                  : 'The program is not deployed yet, so the SDK runs its gate on the live mint, the live Scope prices and the chain clock, under the committed calendar and the program’s default tolerances.'}{' '}
               Nothing is staged. The halt attestation is the one input a preview cannot observe.
             </>
           ) : (
@@ -187,13 +217,14 @@ export function Rail({ replay }: { replay: ReplayData }) {
             <>REPLAY CLOCK {utc(replay.clock)} &middot; {etTime(replay.clock).toUpperCase()}</>
           ) : clock !== null ? (
             <>
-              CHAIN CLOCK {utc(clock)} &middot; {etTime(clock).toUpperCase()}
+              {onDevnet ? 'DEVNET CHAIN CLOCK ' : 'CHAIN CLOCK '}
+              {utc(clock)} &middot; {etTime(clock).toUpperCase()}
               {current && now !== null ? <> &middot; READ {span((now - current.readAt) / 1000).toUpperCase()} AGO</> : null}
             </>
           ) : failure || nothingRead ? (
-            <>MAINNET NOT READ &middot; REPLAY NEEDS NO NETWORK</>
+            <>{onDevnet ? 'DEVNET NOT READ' : 'MAINNET NOT READ'} &middot; REPLAY NEEDS NO NETWORK</>
           ) : (
-            <>READING MAINNET</>
+            <>{onDevnet ? 'READING DEVNET' : 'READING MAINNET'}</>
           )}
           {mode !== 'replay' ? (
             <button type="button" className="i-reread" onClick={() => void read(mode)} disabled={reading}>
@@ -204,7 +235,8 @@ export function Rail({ replay }: { replay: ReplayData }) {
 
         {failure && mode !== 'replay' ? (
           <p className="i-down-inline" role="status">
-            The server could not read mainnet: {failure}. Nothing below is filled in from an older read.
+            The server could not read {onDevnet ? 'the deployment' : 'mainnet'}: {failure}. Nothing below is filled in
+            from an older read.
           </p>
         ) : null}
 
@@ -251,16 +283,30 @@ export function Rail({ replay }: { replay: ReplayData }) {
           NINE&nbsp;<span className="dot">&middot;</span> CHECKS&nbsp;<span className="dot">&middot;</span> ONE&nbsp;
           <span className="dot">&middot;</span> ORDER
         </h2>
-        <div className="i-tablets">
-          {gates.map((g) => (
-            <GateTablet key={g.symbol} symbol={g.symbol} mint={g.mint} result={g.result} />
-          ))}
-        </div>
+        {onDevnet && devnet ? (
+          <DevnetTablet record={devnet} state={devnetState} />
+        ) : (
+          <div className="i-tablets">
+            {gates.map((g) => (
+              <GateTablet key={g.symbol} symbol={g.symbol} mint={g.mint} result={g.result} />
+            ))}
+          </div>
+        )}
         <p className="i-foot i-gate-foot">
-          Each security is checked in the program&rsquo;s own order. The calendar runs first because it is the cheapest
-          check and the one that holds most of the week; the issuer&rsquo;s levers run before any oracle is read. The
-          first condition that fails is the code the program emits, and nothing after it is evaluated: the rows after it
-          still show their values, marked not reached.
+          {onDevnet ? (
+            <>
+              The program ran this order itself, on chain, in the same sequence: the calendar first because it is the
+              cheapest check and the one that holds most of the week, the issuer&rsquo;s levers before any oracle is
+              read. It wrote the first code that refused, and that is the code read back above.
+            </>
+          ) : (
+            <>
+              Each security is checked in the program&rsquo;s own order. The calendar runs first because it is the
+              cheapest check and the one that holds most of the week; the issuer&rsquo;s levers run before any oracle is
+              read. The first condition that fails is the code the program emits, and nothing after it is evaluated: the
+              rows after it still show their values, marked not reached.
+            </>
+          )}
         </p>
       </section>
 
@@ -275,6 +321,9 @@ export function Rail({ replay }: { replay: ReplayData }) {
             ? 'The measurement as it was taken at 09:15 UTC that Sunday, an hour before the Scope account the gate replays was captured: the Scope entries tokenized-equity lending marks against, beside the price one share was trading at on chain, converted to the same unit with each mint’s multiplier.'
             : 'The Scope entries tokenized-equity lending marks against, beside the price one share is trading at on chain right now, converted to the same unit with each mint’s multiplier, read on the server the way scripts/measure-basis.py reads them.'}{' '}
           A feed can report itself seconds old while carrying a price that has not moved since the market closed.
+          {onDevnet
+            ? ' This measurement is mainnet, not devnet: devnet has no Scope account and no xStocks, so it is the same read Preview makes.'
+            : ''}
         </p>
         <Basis result={basis} anchor={mode === 'replay' ? null : anchor} />
       </section>

@@ -423,6 +423,39 @@
 }
 .instrument .i-down-note{ font-style:italic; margin-top:var(--s1) !important; }
 
+/* ---------- I · the deployment, read live on devnet ---------- */
+.instrument .i-devnet{
+  max-width:980px;
+  margin:0 auto;
+}
+.instrument .i-devnet-note{
+  margin:var(--s2) 0 var(--s3);
+  font-size:16px;
+  line-height:26px;
+}
+.instrument .i-devnet-note strong{
+  font-family:var(--display);
+  font-weight:600;
+  font-size:14px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+}
+.instrument .i-state tbody th{ width:14.5rem; }
+.instrument .i-state td code{ font-size:0.86em; }
+.instrument .i-state-note{ display:block; margin-top:3px; max-width:66ch; }
+.instrument .i-state-note .i-mono{ overflow-wrap:anywhere; }
+.instrument .i-devnet-probes{ margin-top:var(--s4); }
+.instrument .i-probes-head{
+  margin:0 0 var(--s2);
+  font-family:var(--display);
+  font-weight:600;
+  font-size:14px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+}
+.instrument .i-probe-tx{ display:block; }
+.instrument .i-probe-tx + .i-probe-tx{ margin-top:4px; }
+
 /* ---------- II · the basis ---------- */
 .instrument .i-ages{
   display:grid;
@@ -782,6 +815,12 @@
   .instrument .i-invariant td{ border-top:0; }
   .instrument .i-invariant{ border-top:1px solid var(--rule-strong); }
   .instrument .i-adjust-table tbody th{ display:block; text-align:left; }
+  /* the state table is two columns of prose: each cell keeps its own line */
+  .instrument .i-state tbody th,
+  .instrument .i-state td{ display:block; text-align:left; width:auto; }
+  .instrument .i-state td::before{ content:none; }
+  .instrument .i-probes td{ flex-wrap:wrap; }
+  .instrument .i-probes .i-probe-tx{ flex:1 0 100%; text-align:right; }
   .instrument .i-empty{ display:block !important; }
   .instrument .i-empty::before{ content:none !important; }
 

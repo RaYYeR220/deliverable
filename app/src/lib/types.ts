@@ -114,6 +114,78 @@ export interface RailSnapshot {
   readAt: number;
   gates: Array<{ symbol: string; mint: string; result: Sourced<GateView> }>;
   basis: Sourced<BasisView>;
+  /** Live against a devnet deployment: the program's own state. Null in every other mode. */
+  devnet: Sourced<DevnetState> | null;
+}
+
+/**
+ * The devnet deployment as the repository records it: addresses and signatures from
+ * scripts/devnet/deployment.json, read at build time. Nothing here is a live reading.
+ */
+export interface DevnetRecord {
+  programId: string;
+  standinMint: string;
+  security: string;
+  registry: string;
+  calendar: string;
+  deploySignature: string | null;
+  deploySlot: number | null;
+  /** The Pyth feed the security was registered against, as the record names it. */
+  feed: { name: string; id: string; maxAge: number } | null;
+  probes: DevnetProbe[];
+  file: string;
+}
+
+export interface DevnetProbe {
+  mode: string;
+  session: string | null;
+  /** Chain clock when the probe ran. Null when the record does not carry one. */
+  chainClock: number | null;
+  code: number | null;
+  codeName: string | null;
+  refusalsAfter: number | null;
+  /** Empty when the probe is listed but has not been sent yet. */
+  signatures: Array<{ label: string; signature: string }>;
+}
+
+/** What the deployed program itself holds, read from devnet. Every field comes from chain. */
+export interface DevnetState {
+  programId: string;
+  security: string;
+  mint: string;
+  /** SecurityState.symbol, as the program stored it. */
+  symbol: string;
+  decimals: number;
+  /** The stand-in mint's own Token-2022 metadata. */
+  mintSymbol: string | null;
+  mintName: string | null;
+  mintSupply: string;
+  binding: {
+    kind: string;
+    source: string;
+    /** Hex of the Pyth feed id on the security, when it is Pyth-bound. */
+    feedId: string | null;
+    maxAge: number | null;
+    /** The record's name for that feed id, only when the id read matches it. */
+    feedName: string | null;
+    secondary: string | null;
+  };
+  price: { text: string; conf: string; confBps: string; expo: number; publishTs: number; age: number } | null;
+  syncedTs: number;
+  observedMultiplier: string;
+  pendingMultiplier: string | null;
+  refusals: number;
+  lastRefusalCode: number;
+  lastRefusalName: string | null;
+  lastRefusalTitle: string | null;
+  lastRefusalNumeral: string | null;
+  lastRefusalErrorCode: number | null;
+  lastRefusalReason: string | null;
+  lastRefusalTs: number;
+  tolerances: { maxAge: number; maxConfBps: number; maxDivergenceBps: number };
+  halted: boolean;
+  registryPaused: boolean | null;
+  chainClock: number;
 }
 
 export interface PinnedAccount {
@@ -188,4 +260,12 @@ export interface SeriesRow {
 export type SeriesSnapshot =
   | { configured: false; cluster: string }
   | { configured: true; cluster: string; programId: string; deployed: false }
-  | { configured: true; cluster: string; programId: string; deployed: true; series: SeriesRow[] };
+  | {
+      configured: true;
+      cluster: string;
+      programId: string;
+      deployed: true;
+      /** The securities that were asked about, so an empty table can name them. */
+      securities: string[];
+      series: SeriesRow[];
+    };

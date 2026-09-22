@@ -32,6 +32,13 @@ export const PROGRAM_ID_INVALID: string | null = programId.invalid;
 
 export const REPOSITORY_URL: string | null = process.env.NEXT_PUBLIC_REPOSITORY_URL?.trim() || null;
 
+/**
+ * The deployment that exists today is on devnet, against a stand-in mint, because devnet
+ * has no xStocks and no Scope. Live then reads that program's own state instead of
+ * running the gate over the mainnet securities, which are not registered under it.
+ */
+export const DEVNET_LIVE: boolean = PROGRAM_ID !== null && CLUSTER === 'devnet';
+
 export const CLUSTER_LABEL: Record<Cluster, string> = {
   'mainnet-beta': 'Solana mainnet',
   devnet: 'Solana devnet',
@@ -43,6 +50,12 @@ type ExplorerKind = 'tx' | 'account' | 'token';
 /** Solscan link. `cluster` defaults to mainnet because most of what is linked lives there. */
 export function solscan(kind: ExplorerKind, id: string, cluster: Cluster = 'mainnet-beta'): string {
   const base = `https://solscan.io/${kind}/${id}`;
+  return cluster === 'mainnet-beta' ? base : `${base}?cluster=${cluster}`;
+}
+
+/** Solana Explorer link. The cluster is carried in the query, as devnet links need it. */
+export function explorer(kind: 'tx' | 'address', id: string, cluster: Cluster = CLUSTER): string {
+  const base = `https://explorer.solana.com/${kind}/${id}`;
   return cluster === 'mainnet-beta' ? base : `${base}?cluster=${cluster}`;
 }
 

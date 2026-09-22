@@ -140,7 +140,9 @@ export function SeriesPanel() {
             ) : (
               <tr>
                 <td colSpan={7} className="i-empty">
-                  {deployed ? 'No series have been written on AAPLx or NVDAx yet.' : 'No series: nothing is deployed to hold one.'}
+                  {deployed && load.state === 'read' && load.value.configured && load.value.deployed
+                    ? `No series have been written on ${load.value.securities.join(' or ')} yet.`
+                    : 'No series: nothing is deployed to hold one.'}
                 </td>
               </tr>
             )}
