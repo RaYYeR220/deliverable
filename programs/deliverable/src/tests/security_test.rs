@@ -18,7 +18,7 @@ use super::harness::{
     usdc_mint_account, AAPLX_DECIMALS, AAPLX_NEW_MULTIPLIER, SCOPE_AAPLX_CHECKED, SCOPE_AAPLX_LAZER,
     SCOPE_PRICES_DATA, USDC_MINT,
 };
-use super::venue::{ix, refusal_code_in_logs, send, symbol, Venue, VenueConfig, HERO_TS};
+use super::venue::{ix, refusal_code_in_logs, send, symbol, TxResult, Venue, VenueConfig, HERO_TS};
 
 #[test]
 fn sync_security_records_what_the_mint_and_the_oracle_actually_say() {
@@ -277,6 +277,69 @@ fn a_security_is_its_mint_and_cannot_be_registered_twice() {
         },
     );
     assert!(send(&mut venue.svm, &[instruction], &authority, &[]).is_err());
+}
+
+/// A copy of the real Scope account, owned by some other program. `observe()`
+/// rejects it, so any instruction that reads it fails.
+fn plant_impostor_oracle(venue: &mut Venue) -> Pubkey {
+    let impostor = SvmPubkey::new_unique();
+    let mut account = venue
+        .svm
+        .get_account(&SvmPubkey::from(SCOPE_PRICES.to_bytes()))
+        .unwrap();
+    account.owner = SvmPubkey::new_unique();
+    venue.svm.set_account(impostor, account).unwrap();
+    Pubkey::new_from_array(impostor.to_bytes())
+}
+
+fn probe_with_oracle(venue: &mut Venue, oracle: Pubkey) -> TxResult {
+    let instruction = ix(
+        crate::accounts::ProbeSecurity {
+            security: venue.security,
+            calendar: venue.calendar,
+            underlying_mint: venue.underlying(),
+            primary_oracle: oracle,
+            secondary_oracle: oracle,
+        },
+        crate::instruction::ProbeSecurity {},
+    );
+    let authority = venue.authority.insecure_clone();
+    send(&mut venue.svm, &[instruction], &authority, &[])
+}
+
+#[test]
+fn a_closed_market_is_refused_before_any_oracle_is_read() {
+    // The README says the calendar decides a closed market by arithmetic, before
+    // an oracle is touched. This is the test that holds us to it: hand the
+    // program an oracle account it would reject outright, on a Sunday. If the
+    // oracle were read first, the instruction would fail on the impostor. It
+    // must instead succeed and record MarketClosed.
+    let mut venue = Venue::rail(VenueConfig::default());
+    venue.at(HERO_TS);
+    let impostor = plant_impostor_oracle(&mut venue);
+
+    let meta = probe_with_oracle(&mut venue, impostor)
+        .expect("a closed market must be decided without reading the oracle");
+    assert_eq!(
+        refusal_code_in_logs(&meta.logs),
+        Some(RefusalCode::MarketClosed as u8)
+    );
+    assert_eq!(
+        venue.security_state().last_refusal_code,
+        RefusalCode::MarketClosed as u8
+    );
+}
+
+#[test]
+fn the_same_impostor_oracle_is_rejected_once_the_market_is_open() {
+    // Negative control for the test above. Without it, that test would also pass
+    // if the impostor were simply never rejected by anything.
+    let mut venue = Venue::rail(VenueConfig::default());
+    let impostor = plant_impostor_oracle(&mut venue);
+    assert!(
+        probe_with_oracle(&mut venue, impostor).is_err(),
+        "an open market must read the oracle, and this one is not Scope"
+    );
 }
 
 #[test]

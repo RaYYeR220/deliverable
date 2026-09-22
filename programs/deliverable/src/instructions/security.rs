@@ -9,8 +9,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::Mint;
 
+use crate::calendar::{resolve_session, Session};
 use crate::constants::{CALENDAR_SEED, REGISTRY_SEED, SECURITY_SEED};
-use crate::error::DeliverableError;
+use crate::error::{DeliverableError, RefusalCode};
 use crate::gate::{check_actionable, emit_refusal, GateInputs, HaltState};
 use crate::mint_guards::read_mint_guards;
 use crate::oracle::{observe, Observation, OracleBinding};
@@ -251,6 +252,14 @@ pub struct ProbeSecurity<'info> {
 /// an indexer. The `Refused` event goes out identically in both paths.
 pub fn probe_security(ctx: Context<ProbeSecurity>) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
+
+    // A closed market is decided before any oracle is read, for the reason
+    // given on `gate::refuse_if_closed`. This path records rather than reverts,
+    // so it cannot reuse that helper directly.
+    if resolve_session(&ctx.accounts.calendar, now) == Session::Closed {
+        return record_refusal(&mut ctx.accounts.security, RefusalCode::MarketClosed, now);
+    }
+
     let mint = &ctx.accounts.underlying_mint;
     let security = &ctx.accounts.security;
 
@@ -290,18 +299,24 @@ pub fn probe_security(ctx: Context<ProbeSecurity>) -> Result<()> {
         max_divergence_bps: security.max_divergence_bps,
     };
 
-    let verdict = check_actionable(&inputs)?;
-    let key = security.key();
-    let security = &mut ctx.accounts.security;
-    match verdict {
-        None => msg!("actionable at {}", now),
-        Some(code) => {
-            emit_refusal(key, code, now);
-            security.refusals = security.refusals.saturating_add(1);
-            security.last_refusal_code = code as u8;
-            security.last_refusal_ts = now;
-            msg!("refused code={} at={}", code as u8, now);
+    match check_actionable(&inputs)? {
+        None => {
+            msg!("actionable at {}", now);
+            Ok(())
         }
+        Some(code) => record_refusal(&mut ctx.accounts.security, code, now),
     }
+}
+
+fn record_refusal(
+    security: &mut Account<SecurityState>,
+    code: RefusalCode,
+    now: i64,
+) -> Result<()> {
+    emit_refusal(security.key(), code, now);
+    security.refusals = security.refusals.saturating_add(1);
+    security.last_refusal_code = code as u8;
+    security.last_refusal_ts = now;
+    msg!("refused code={} at={}", code as u8, now);
     Ok(())
 }

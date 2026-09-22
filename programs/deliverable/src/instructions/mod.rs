@@ -97,6 +97,9 @@ pub fn assert_security_actionable<'info>(
         DeliverableError::CalendarMismatch
     );
 
+    // Before any oracle is read: see `gate::refuse_if_closed`.
+    crate::gate::refuse_if_closed(security.key(), calendar, now)?;
+
     let multiplier = read_multiplier(mint, now)?;
     let guards = read_mint_guards(mint)?;
 

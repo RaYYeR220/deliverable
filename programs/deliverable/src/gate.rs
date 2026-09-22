@@ -147,6 +147,23 @@ pub fn assert_actionable(g: &GateInputs) -> Result<()> {
     }
 }
 
+/// Refuse on the calendar alone, before the caller has read any oracle.
+///
+/// `check_actionable` puts the calendar first, but it can only run once its
+/// inputs exist, and building them means reading the price accounts. A Pyth
+/// `PriceUpdateV2` that is simply old — which is the normal state of an equity
+/// feed on a Sunday — fails inside `observe()` with `OracleStale` before the
+/// gate is ever reached. That reports the wrong reason for the refusal and makes
+/// a closed market depend on an oracle account being present and fresh. Callers
+/// run this first so a closed market is decided by arithmetic and nothing else.
+pub fn refuse_if_closed(security: Pubkey, calendar: &MarketCalendar, now: i64) -> Result<()> {
+    if resolve_session(calendar, now) == Session::Closed {
+        emit_refusal(security, RefusalCode::MarketClosed, now);
+        return Err(error!(DeliverableError::MarketClosed));
+    }
+    Ok(())
+}
+
 /// A refusal is an on-chain artifact whether or not the transaction survives:
 /// Solana records a failed transaction with its logs, so the event is there to
 /// be linked either way.
