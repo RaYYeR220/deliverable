@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { REPOSITORY_URL } from '@/lib/config';
+import { REPOSITORY_URL, VIDEO_URL } from '@/lib/config';
 
 import './landing.css';
 
@@ -414,6 +414,11 @@ export default function Landing() {
                   <a href={`${REPOSITORY_URL}#readme`}>Specification</a>
                 </li>
               </>
+            ) : null}
+            {VIDEO_URL ? (
+              <li>
+                <a href={VIDEO_URL}>Demonstration</a>
+              </li>
             ) : null}
             <li>
               <a href="/evidence/weekend-2026-09-20.json">Proof of measurement</a>

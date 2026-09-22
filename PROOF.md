@@ -7,6 +7,10 @@ evidence tier for each claim.
 
 ---
 
+- **Demonstration:** <https://youtu.be/GC2hm3J1jhQ> (3:27)
+- **Live instrument:** <https://deliverable-eight.vercel.app/app>
+- **Repository:** <https://github.com/RaYYeR220/deliverable>
+
 ## Deployments
 
 - **The program is on devnet.** `DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa`, deployed at devnet

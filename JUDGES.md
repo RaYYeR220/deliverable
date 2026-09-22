@@ -8,6 +8,9 @@ transfer hook has appeared, or a corporate action is about to land. Its strikes 
 mint's `ScaledUiAmount` multiplier, so a dividend or a ten-for-one split leaves the contract's
 notional unchanged.
 
+**In a hurry?** The three-and-a-half minute demonstration is at <https://youtu.be/GC2hm3J1jhQ>, and the live instrument
+is at <https://deliverable-eight.vercel.app/app>. Everything below is how to check it yourself.
+
 Steps 1 and 3 to 5 take about five minutes once dependencies are installed. Steps 2 and 6 add a
 few more.
 

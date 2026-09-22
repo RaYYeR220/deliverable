@@ -31,6 +31,7 @@ export const PROGRAM_ID: string | null = programId.id;
 export const PROGRAM_ID_INVALID: string | null = programId.invalid;
 
 export const REPOSITORY_URL: string | null = process.env.NEXT_PUBLIC_REPOSITORY_URL?.trim() || null;
+export const VIDEO_URL: string | null = process.env.NEXT_PUBLIC_VIDEO_URL?.trim() || null;
 
 /**
  * The deployment that exists today is on devnet, against a stand-in mint, because devnet
