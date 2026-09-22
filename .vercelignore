@@ -1,0 +1,10 @@
+target/
+**/node_modules/
+**/.next/
+**/dist/
+.anchor/
+test-ledger/
+.surfpool/
+.env
+.env.*
+!.env.example
