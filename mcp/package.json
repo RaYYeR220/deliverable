@@ -1,0 +1,31 @@
+{
+  "name": "@stocklana/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Read-only stdio MCP server for the Deliverable rail and venue: security state, the refusal gate, option series with adjusted strikes, multiplier-correct balances and corporate-action history.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "deliverable-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "pnpm --dir ../sdk build && tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@solana/kit": "^8.3.0",
+    "@stocklana/sdk": "link:../sdk",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}
