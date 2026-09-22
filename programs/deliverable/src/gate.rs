@@ -7,8 +7,9 @@
 //! settles at a number nobody can defend.
 //!
 //! The order matters. The calendar is checked first because it is the cheapest,
-//! the most deterministic, and the condition that holds ~70% of the week — so
-//! the common case never touches an oracle at all.
+//! the most deterministic, and the condition that holds about 81% of the week
+//! (the regular session is 32.5 of 168 hours) — so the common case never
+//! touches an oracle at all.
 
 use anchor_lang::prelude::*;
 

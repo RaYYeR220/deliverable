@@ -6,20 +6,37 @@ This file draws the line. If something here is vague, treat that as a bug and op
 
 - **The underlying.** AAPLx `XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp` and NVDAx
   `Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh` — real Token-2022 mints with real supply, real
-  holders and real `ScaledUiAmount` multipliers. There is **no mock token** in this repository.
+  holders and real `ScaledUiAmount` multipliers. The program, the SDK and every test use real mints
+  only, and so does everything that reads or targets mainnet: the evidence files, the test fixtures
+  and the mainnet series flow, which quotes in AAPLx (simulated against live state, not yet sent).
 - **The oracle.** Kamino Scope `OraclePrices` `3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH`, owned
   by `HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ`. Kamino's xStocks market prices its AAPLx and
   NVDAx reserves from entries 317 and 332 of this account; we verified those two and claim no more.
-  There is **no mock oracle** and no admin-signed `update_price` anywhere in this repository.
+  There is **no mock oracle** and no admin-signed `update_price` anywhere in this repository. The
+  only hand-made oracle accounts in the tests are copies of the real one under another owner,
+  planted to show that the program rejects them.
 - **The measurements.** Both snapshots in `docs/evidence/` were taken by
   `scripts/measure-basis.py` against mainnet, and the script is in the repository so you can take
-  your own. Nothing in them is hand-written.
+  your own. Nothing in them is hand-written, and they are kept byte for byte as taken. Their stored
+  `basis_bps` field was computed by the first version of the script, which set Scope's per-token
+  price against Jupiter's per-share price and is off by the multiplier. The README tables and the
+  app recompute the basis like for like from the raw `oracle_price` and `dex_price` in each file.
 - **The corporate actions.** The transactions in `keeper/data/corporate-actions.json` are real
   mainnet transactions, recovered by decoding Token-2022 `UpdateMultiplier` instructions
   (`0x2B 0x01` + `f64` LE multiplier + `i64` LE effective timestamp). Signatures are clickable.
 - **The tests.** They run under LiteSVM against **real mainnet account dumps** in
   `tests/fixtures/` — the real AAPLx mint, the real Scope account, a real Pyth `PriceUpdateV2`.
   The Token-2022 program in those tests is the real one, not a stand-in.
+
+## One stand-in token, on devnet only
+
+- **The devnet series market quotes in a stand-in.** Devnet has no xStocks, so
+  `market/src/devnet-quote.ts` mints `AAPLd`
+  (`8FBsKWYuBWwn2zo2viDrjdMeN8CrVH5WbaY8YaJMvJDm`, devnet): a Token-2022 mint with 8 decimals and
+  on-chain metadata, and no transfer fee, no `PermanentDelegate` and no `ScaledUiAmount` multiplier.
+  It is not an xStock. The devnet run of the Meteora DBC series market uses it as its quote mint, and
+  `market/README.md` ("The devnet stand-in, precisely") says why. Nothing outside `market/` uses
+  it.
 
 ## Conventions, models and approximations — stated plainly
 
@@ -59,10 +76,15 @@ The application has three modes and always labels which one is active.
 The headline measurement in the README (09:15 UTC) and the replay snapshot (10:14:54 UTC) are two
 different reads taken an hour apart on the same Sunday. Both fall in the same closed-market window.
 
-Replay is **not a simulation**. It is the same code path executing against real recorded account
-data with a controlled clock, which is exactly what the tests do. It is labelled in the interface
-and it names the snapshot it is replaying. If you want the refusal without the replay, open the app
-after 16:00 ET, on a weekend, or on any of the holidays in the committed calendar.
+Replay evaluates real recorded account bytes with a controlled clock. What evaluates them is the
+**SDK's TypeScript port** of the gate (`checkActionable`, `sdk/src/gate.ts`), not the compiled
+program. The compiled program runs against the same Scope and AAPLx bytes (`tests/fixtures/`) in the
+LiteSVM tests. A drift test, `sdk/test/refusal-codes.test.ts`, pins the port to the program's check
+order in `gate.rs` and its refusal codes in `error.rs`, and `sdk/test/gate.test.ts` checks the port
+case by case. Replay is labelled in the interface and names the snapshot it is replaying. Its basis
+panel shows the 09:15 UTC measurement recomputed like for like from the pinned file's raw prices. If
+you want the refusal without the replay, open the app after 16:00 ET, on a weekend, or on any of the
+holidays in the committed calendar.
 
 ## Not in scope, deliberately
 

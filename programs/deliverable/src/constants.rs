@@ -29,8 +29,10 @@ pub const REGULAR_CLOSE_MINUTE: u16 = 16 * 60;
 
 // --- gate defaults, overridable per security ---
 
-/// A price older than this inside an open session is refused. Scope refreshes
-/// every few slots while US markets are open, so a minute is generous.
+/// A price older than this inside an open session is refused. Inside a regular
+/// session Scope re-stamped the AAPLx and NVDAx entries every 41–43 s, and the
+/// largest age observed was 44 s (sampled every 3 s, 2026-09-22 14:24–14:29
+/// UTC), so a minute leaves about 16 s of headroom over a healthy feed.
 pub const DEFAULT_MAX_PRICE_AGE_SECS: u32 = 60;
 
 /// Refuse when reported confidence exceeds this fraction of the price.

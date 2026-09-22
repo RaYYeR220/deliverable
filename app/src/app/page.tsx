@@ -11,7 +11,9 @@ export default function Landing() {
         Skip to the argument
       </a>
 
-      <p className="architrave">DELIVERABLE &middot; OPTIONS ON TOKENIZED US EQUITY &middot; SOLANA MAINNET</p>
+      <p className="architrave">
+        DELIVERABLE &middot; OPTIONS ON TOKENIZED US EQUITY &middot; READS SOLANA MAINNET &middot; PROGRAM TARGETS DEVNET
+      </p>
 
       <main>
         <section id="hero">
@@ -121,8 +123,8 @@ export default function Landing() {
             </h2>
 
             <p className="lede">
-              Two readings taken off Solana mainnet, against the on-chain market price of the same tokenized shares.
-              No simulation, no backtest.
+              Two readings taken off Solana mainnet, against the on-chain market price of the same tokenized shares,
+              per share on both sides. No simulation, no backtest.
             </p>
 
             <div className="record">
@@ -134,25 +136,34 @@ export default function Landing() {
                 <dd>+82 s</dd>
                 <dt>Slot</dt>
                 <dd>+312</dd>
-                <dt>Price, moved</dt>
+                <dt>Price moved, 5 of 8 entries</dt>
                 <dd className="held">0.0000</dd>
               </dl>
 
               <p className="body">
-                The publisher was alive. The clock advanced, the chain advanced, the number did not. Meanwhile the
-                shares themselves were changing hands on chain at a different price, and the gap was not noise:
+                The publisher was alive. The clock advanced, the chain advanced, the number did not: AAPLx, NVDAx,
+                CRCLx, HOODx and COINx did not move at all, and SPYx, QQQx and METAx moved by cents. Meanwhile the
+                shares themselves were changing hands on chain. The ETFs held within eight basis points of the
+                oracle; the single names with crypto beta did not:
               </p>
 
               <dl className="ledger">
                 <dt>CRCLx</dt>
-                <dd>&minus;269 bps</dd>
+                <dd>&minus;268.9 bps</dd>
                 <dt>HOODx</dt>
-                <dd>&minus;236 bps</dd>
+                <dd>&minus;235.6 bps</dd>
                 <dt>AAPLx</dt>
-                <dd>&minus;101 bps</dd>
+                <dd>&minus;69.0 bps</dd>
+                <dt>SPYx</dt>
+                <dd>&minus;7.6 bps</dd>
+                <dt>QQQx</dt>
+                <dd>&minus;0.5 bps</dd>
               </dl>
 
-              <p className="note">AAPLx &middot; ORACLE 336.7021 &middot; MARKET 333.2898 &middot; BASIS &minus;101 BPS</p>
+              <p className="note">
+                AAPLx &middot; ORACLE 336.7021 PER TOKEN &divide; MULTIPLIER 1.00326901 = 335.6050 PER SHARE &middot;
+                MARKET 333.2898 PER SHARE &middot; BASIS &minus;69.0 BPS
+              </p>
             </div>
 
             <div className="record">
@@ -161,17 +172,27 @@ export default function Landing() {
 
               <dl className="ledger">
                 <dt>CRCLx</dt>
-                <dd>&minus;324 bps</dd>
+                <dd>&minus;324.0 bps</dd>
                 <dt>COINx</dt>
-                <dd>&minus;268 bps</dd>
+                <dd>&minus;268.3 bps</dd>
                 <dt>HOODx</dt>
-                <dd>&minus;236 bps</dd>
+                <dd>&minus;235.7 bps</dd>
                 <dt>AAPLx</dt>
-                <dd>&minus;55 bps</dd>
+                <dd>&minus;22.3 bps</dd>
+                <dt>SPYx</dt>
+                <dd>&minus;0.3 bps</dd>
+                <dt>QQQx</dt>
+                <dd>+5.0 bps</dd>
               </dl>
 
               <p className="verdict cut">IT RECURS EVERY NIGHT, NOT ONCE A WEEK</p>
             </div>
+
+            <p className="body">
+              Our first version of these figures set a per-token oracle price against a per-share market price and was
+              off by the <code>ScaledUiAmount</code> multiplier, the exact mistake this project exists to prevent; every
+              figure above is like for like, and CRCLx, HOODx and COINx, whose multiplier is 1.0, were unaffected.
+            </p>
 
             <div className="rule" aria-hidden="true" />
 
@@ -192,9 +213,10 @@ export default function Landing() {
             </ul>
 
             <p className="body" style={{ marginTop: 'var(--s4)' }}>
-              That is the finding, stated precisely. The feed does exactly what it was built to do. It freezes while
-              the reference market is shut &mdash; which is correct behaviour for a price, and a trap for anything that
-              settles against one.
+              That is the finding, stated precisely. The feed does what it was built to do: while the reference market
+              is shut it holds still. In both readings five of the eight entries did not move at all and the other
+              three moved by cents &mdash; which is correct behaviour for a price, and a trap for anything that settles
+              against one.
             </p>
 
             <p className="marked">
@@ -203,6 +225,12 @@ export default function Landing() {
                 of collateral in Kamino&rsquo;s xStocks market, whose AAPLx and NVDAx reserves price from
                 this feed.
               </span>
+            </p>
+
+            <p className="body">
+              The instrument replays Record I&rsquo;s Sunday. Its Replay mode runs the SDK&rsquo;s TypeScript port of the
+              gate on the pinned account bytes; the compiled program runs against the same Scope and AAPLx bytes in the
+              LiteSVM tests, and a drift test pins the port to the program&rsquo;s check order and refusal codes.
             </p>
           </div>
         </section>
@@ -270,9 +298,9 @@ export default function Landing() {
               </ul>
 
               <p className="body" style={{ marginTop: 'var(--s4)' }}>
-                A series can also be written unadjusted, ignoring the mint entirely. Every options venue on tokenized
-                equities today writes one of those by omission. Being able to express it is what makes the invariant
-                falsifiable rather than merely asserted.
+                A series can also be written unadjusted, ignoring the mint entirely. The program&rsquo;s tests write one
+                and show that across a split it is wrong by exactly the split factor. Being able to express it is what
+                makes the invariant falsifiable rather than merely asserted.
               </p>
             </div>
           </div>
@@ -391,10 +419,12 @@ export default function Landing() {
               <a href="/evidence/weekend-2026-09-20.json">Proof of measurement</a>
             </li>
           </ul>
-          <p className="stamp">DELIVERABLE &middot; SOLANA MAINNET &middot; MIT LICENCE</p>
+          <p className="stamp">
+            DELIVERABLE &middot; READS SOLANA MAINNET &middot; PROGRAM TARGETS DEVNET &middot; MIT LICENCE
+          </p>
           <p className="stamp">
             2026-09-20 09:15 UTC &middot; 37 H AFTER THE CLOSE &middot; &Delta;T +82 S &middot; &Delta;SLOT +312
-            &middot; &Delta;PX 0.0000
+            &middot; AAPLX &Delta;PX 0.0000
           </p>
         </div>
       </footer>

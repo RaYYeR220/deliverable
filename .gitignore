@@ -37,3 +37,6 @@ test-ledger/
 .vercel
 
 .vercel
+
+# python
+__pycache__/

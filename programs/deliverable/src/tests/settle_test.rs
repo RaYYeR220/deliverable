@@ -35,7 +35,7 @@ fn the_covered_call_survives_the_weekend_and_settles_in_the_share() {
     // the transfer the pool would have made.
     venue.hand_option_to_holder(1);
 
-    // --- Sunday. Scope's timestamp is seconds old and its price is 61 hours
+    // --- Sunday. Scope's timestamp is seconds old and its price is 37 hours
     // stale. Every freshness check a program can perform passes. ---
     venue.at(HERO_TS);
     let failed = venue.exercise(1).expect_err("the market is shut");

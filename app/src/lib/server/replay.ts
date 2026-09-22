@@ -24,7 +24,7 @@ import { CLUSTER, SECURITIES } from '@/lib/config';
 import { utc } from '@/lib/format';
 import type { BasisView, GateView, PinnedAccount, ReplayData, Sourced } from '@/lib/types';
 
-import { BASIS_FEEDS } from './feeds';
+import { BASIS_FEEDS, PINNED_MULTIPLIERS, perShareBasis } from './feeds';
 import { buildGateView, labelMap, lastClose } from './gate';
 import { readAppBytes, readAppJson, readRepoBytes, readRepoJson } from './repo';
 import { PROGRAM_ADDRESS, type Address } from './rpc';
@@ -54,6 +54,7 @@ interface EvidenceFile {
     oracle_slot_advanced: number;
     oracle_reported_age_s: number;
     dex_price: number | null;
+    /** Computed bare, per token against per share, by the first version of scripts/measure-basis.py. Not read. */
     basis_bps: number | null;
   }>;
 }
@@ -197,9 +198,14 @@ function pinnedBasis(labels: ReadonlyMap<number, string>): Sourced<BasisView> {
   try {
     const evidence = readRepoJson<EvidenceFile>(...REPLAY_RECORD.split('/'));
     const at = Math.floor(Date.parse(evidence.taken_at) / 1000);
+    // The record's own basis_bps set a per-token oracle price against a per-share market
+    // price. The basis shown here is recomputed like for like from the record's raw prices.
     const rows = evidence.rows.map((row) => {
       const feed = BASIS_FEEDS.find((f) => f.symbol === row.symbol);
       if (!feed) throw new Error(`${row.symbol} is not one of the sampled feeds`);
+      const multiplier = PINNED_MULTIPLIERS[row.symbol];
+      if (multiplier === undefined) throw new Error(`no pinned multiplier for ${row.symbol}`);
+      const basis = perShareBasis(row.oracle_price, multiplier, row.dex_price);
       return {
         symbol: row.symbol,
         mint: feed.mint,
@@ -209,8 +215,11 @@ function pinnedBasis(labels: ReadonlyMap<number, string>): Sourced<BasisView> {
         oracleTs: at - row.oracle_reported_age_s,
         oracleSlot: null,
         reportedAge: row.oracle_reported_age_s,
+        multiplier,
+        oraclePerShare: basis.oraclePerShare,
         marketPrice: row.dex_price,
-        basisBps: row.basis_bps,
+        basisBps: basis.basisBps,
+        basisBareBps: basis.basisBareBps,
         moved: row.oracle_price_moved,
         tsAdvanced: row.oracle_ts_advanced_s,
         slotAdvanced: row.oracle_slot_advanced,
@@ -228,6 +237,8 @@ function pinnedBasis(labels: ReadonlyMap<number, string>): Sourced<BasisView> {
         market: { ok: true, error: null, source: 'jup.ag price v3' },
         gapSeconds: evidence.gap_seconds,
         record: REPLAY_RECORD,
+        multiplierSource:
+          'the multiplier each mint had in force at the read; the values were read from the mints on 2026-09-22 and every one took effect before 2026-09-20 09:15 UTC',
       },
     };
   } catch (error) {

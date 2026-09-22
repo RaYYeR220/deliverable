@@ -90,19 +90,28 @@ export function Basis({ result, anchor }: { result: Sourced<BasisView> | null; a
 
       <div className="i-table-wrap">
         <table className="i-table i-basis-table">
-          <caption className="visually-hidden">Oracle price against on-chain market price</caption>
+          <caption className="visually-hidden">Oracle price per share against the on-chain market price per share</caption>
           <thead>
             <tr>
               <th scope="col">Security</th>
               <th scope="col">Scope entry</th>
               <th scope="col" className="num">
-                Oracle
+                Oracle, per token
               </th>
               <th scope="col" className="num">
-                On chain
+                Multiplier
+              </th>
+              <th scope="col" className="num">
+                Oracle, per share
+              </th>
+              <th scope="col" className="num">
+                On chain, per share
               </th>
               <th scope="col" className="num">
                 Basis
+              </th>
+              <th scope="col" className="num">
+                Bare
               </th>
               <th scope="col" className="num">
                 Reported age
@@ -128,14 +137,23 @@ export function Basis({ result, anchor }: { result: Sourced<BasisView> | null; a
                       {row.scopeLabel ? <span className="i-entry-label"> {row.scopeLabel}</span> : null}
                     </span>
                   </td>
-                  <td data-label="Oracle" className="num">
+                  <td data-label="Oracle, per token" className="num">
                     {price(row.oraclePrice)}
                   </td>
-                  <td data-label="On chain" className="num">
+                  <td data-label="Multiplier" className="num">
+                    {row.multiplier !== null ? String(row.multiplier) : <span className="i-absent">not read</span>}
+                  </td>
+                  <td data-label="Oracle, per share" className="num">
+                    {row.oraclePerShare !== null ? price(row.oraclePerShare) : <span className="i-absent">none</span>}
+                  </td>
+                  <td data-label="On chain, per share" className="num">
                     {row.marketPrice !== null ? price(row.marketPrice) : <span className="i-absent">not read</span>}
                   </td>
                   <td data-label="Basis" className="num i-strong">
                     {row.basisBps !== null ? bps(row.basisBps) : <span className="i-absent">none</span>}
+                  </td>
+                  <td data-label="Bare, mixed units" className="num">
+                    {row.basisBareBps !== null ? bps(row.basisBareBps) : <span className="i-absent">none</span>}
                   </td>
                   <td data-label="Reported age" className="num">
                     {span(row.reportedAge)}
@@ -163,19 +181,19 @@ export function Basis({ result, anchor }: { result: Sourced<BasisView> | null; a
         {view.source === 'pinned' ? (
           <>
             Recorded by <code>scripts/measure-basis.py</code>: two samples {view.gapSeconds} seconds apart; the table is
-            the second. Record: <a href={`/evidence/${view.record?.split('/').pop() ?? ''}`}>{view.record}</a>.
+            the second. Record: <a href={`/evidence/${view.record?.split('/').pop() ?? ''}`}>{view.record}</a>. The
+            record&rsquo;s own <code>basis_bps</code> field was computed bare; the basis here is recomputed like for like
+            from its raw prices.
           </>
         ) : firstDelta ? (
-          <>
-            Compared with this page&rsquo;s first read, {span(firstDelta.gap)} ago. Basis is (on chain &minus; oracle)
-            &divide; oracle.
-          </>
+          <>Compared with this page&rsquo;s first read, {span(firstDelta.gap)} ago.</>
         ) : (
-          <>
-            The page reads again every thirty seconds; the last column fills once there are two reads to compare. Basis
-            is (on chain &minus; oracle) &divide; oracle.
-          </>
-        )}
+          <>The page reads again every thirty seconds; the last column fills once there are two reads to compare.</>
+        )}{' '}
+        Scope prices one unscaled token; jup.ag prices one share, and a token is <em>multiplier</em> shares. Basis is (on
+        chain &minus; oracle per share) &divide; oracle per share, where oracle per share is oracle &divide; multiplier.
+        Bare sets the two prices against each other unconverted, which is off by the multiplier: it is shown so the
+        correction stays visible. Multipliers: {view.multiplierSource}.
       </p>
     </>
   );

@@ -5,12 +5,27 @@ The point of the two samples is the timestamp. While US markets are shut the fee
 advancing its `unix_timestamp` and `last_updated_slot` -- so every freshness check a
 protocol can perform on-chain passes -- while the price it carries does not move.
 
+Units. A Scope xStock entry prices one unscaled token (raw / 10^decimals). Jupiter's
+price v3 `usdPrice` is per UI unit, which for a Token-2022 ScaledUiAmount mint is one
+share: raw x multiplier. One token is therefore `multiplier` shares, and the two numbers
+are compared like for like as
+
+    oracle_per_share = scope_price / multiplier
+    basis            = (dex - oracle_per_share) / oracle_per_share
+
+The multiplier is read from each mint on every run, and it is the one in force at the
+chain clock: `newMultiplier` once `newMultiplierEffectiveTimestamp` has passed, otherwise
+`multiplier`. The `bare` column divides by nothing. It is how the first version of this
+script compared them, and it is wrong by exactly the multiplier.
+
 Usage:  SOLANA_RPC_URL=... python scripts/measure-basis.py [--gap 100] [--out FILE]
 """
 import argparse, base64, datetime as dt, json, os, struct, time, urllib.request
 
 SCOPE_PRICES = "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH"
 SCOPE_PROGRAM = "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ"
+TOKEN_2022 = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+CLOCK_SYSVAR = "SysvarC1ock11111111111111111111111111111111"
 
 # Scope slot index -> (symbol, xStock mint). Slots cross-checked against the Kamino
 # klend reserve configs that consume them.
@@ -24,6 +39,17 @@ FEEDS = {
     320: ("HOODx", "XsvNBAYkrDRNhA7wPHQfX3ZUXZyZLdnCQDfHZ56bzpg"),
     341: ("COINx", "Xs7ZdzSHLU9ftNJsii5fCeJhoRWSC32SQGzGQtePxNu"),
 }
+
+# Token-2022 mint layout, as keeper/src/token2022.ts decodes it: the base mint padded to
+# 165 bytes, a one-byte account type (1 = mint), then TLV entries of u16 type | u16 length.
+ACCOUNT_TYPE_OFFSET = 165
+ACCOUNT_TYPE_MINT = 1
+TLV_START = ACCOUNT_TYPE_OFFSET + 1
+EXT_SCALED_UI_AMOUNT = 25
+
+BASIS_METHOD = ("like-for-like: oracle_price_per_share = oracle_price / multiplier; "
+                "basis_bps = (dex_price - oracle_price_per_share) / oracle_price_per_share; "
+                "basis_bps_bare = (dex_price - oracle_price) / oracle_price")
 
 HDR = {"User-Agent": "deliverable/measure-basis", "Accept": "application/json"}
 
@@ -47,12 +73,58 @@ def read_oracle(url):
     return out
 
 
+def scaled_ui_amount(raw):
+    """`ScaledUiAmountConfig`, #[repr(C)]: authority(32) | multiplier f64 |
+    new_multiplier_effective_timestamp i64 | new_multiplier f64, all little-endian.
+    Returns None when the mint carries no such extension."""
+    if len(raw) <= TLV_START or raw[ACCOUNT_TYPE_OFFSET] != ACCOUNT_TYPE_MINT:
+        return None
+    off = TLV_START
+    while off + 4 <= len(raw):
+        ext_type, length = struct.unpack_from("<HH", raw, off)
+        if ext_type == 0 and length == 0:
+            break
+        if ext_type == EXT_SCALED_UI_AMOUNT and length >= 56:
+            multiplier, effective_ts, new_multiplier = struct.unpack_from("<dqd", raw, off + 4 + 32)
+            return {"multiplier": multiplier, "new_multiplier": new_multiplier, "effective_ts": effective_ts}
+        off += 4 + length
+    return None
+
+
+def read_multipliers(url):
+    """Each mint's multiplier in force at the chain clock, read in one call with the clock."""
+    mints = [m for _s, m in FEEDS.values()]
+    res = rpc(url, "getMultipleAccounts", [mints + [CLOCK_SYSVAR], {"encoding": "base64"}])["result"]
+    accounts = res["value"]
+    clock = accounts[-1]
+    assert clock is not None, "Clock sysvar not returned"
+    now = struct.unpack_from("<q", base64.b64decode(clock["data"][0]), 32)[0]
+    out = {}
+    for (sym, mint), acc in zip(FEEDS.values(), accounts[:-1]):
+        assert acc is not None, f"{sym} mint {mint} not returned"
+        assert acc["owner"] == TOKEN_2022, f"{sym} mint is owned by {acc['owner']}, not Token-2022"
+        cfg = scaled_ui_amount(base64.b64decode(acc["data"][0]))
+        if cfg is None:
+            out[sym] = {"multiplier": 1.0, "pending": None}
+            continue
+        in_force = now >= cfg["effective_ts"]
+        out[sym] = {
+            "multiplier": cfg["new_multiplier"] if in_force else cfg["multiplier"],
+            "pending": None if in_force else {"multiplier": cfg["new_multiplier"], "effective_ts": cfg["effective_ts"]},
+        }
+    return now, out
+
+
 def read_dex():
     ids = ",".join(m for _s, m in FEEDS.values())
     req = urllib.request.Request(f"https://lite-api.jup.ag/price/v3?ids={ids}", headers=HDR)
     data = json.load(urllib.request.urlopen(req, timeout=30))
     return {sym: (data.get(mint) or {}).get("usdPrice") for sym, mint in
             ((s, m) for s, m in FEEDS.values())}
+
+
+def cell(x, fmt, width):
+    return format(x, fmt) if x is not None else "n/a".rjust(width)
 
 
 def main():
@@ -68,30 +140,50 @@ def main():
     first, dex_first = read_oracle(url), read_dex()
     time.sleep(args.gap)
     second, dex_second = read_oracle(url), read_dex()
+    chain_now, mults = read_multipliers(url)
 
     taken = dt.datetime.now(dt.timezone.utc)
-    print(f"oracle  {SCOPE_PRICES}  (Kamino Scope, Chainlink-sourced)")
-    print(f"sampled {taken.strftime('%Y-%m-%d %H:%M:%S')}Z, {args.gap}s apart\n")
-    print(f"{'':8s}{'ORACLE':>12s}{'moved':>9s}{'ts+':>6s}{'slot+':>7s} | {'ON-CHAIN':>11s}{'basis':>9s}")
+    clock = dt.datetime.fromtimestamp(chain_now, dt.timezone.utc)
+    print(f"oracle  {SCOPE_PRICES}  (Kamino Scope OraclePrices: price per unscaled token)")
+    print("market  lite-api.jup.ag/price/v3 usdPrice (price per share)")
+    print(f"sampled {taken.strftime('%Y-%m-%d %H:%M:%S')}Z, {args.gap}s apart; "
+          f"multipliers in force at chain clock {clock.strftime('%Y-%m-%d %H:%M:%S')}Z\n")
+    print(f"{'':7s}{'ORACLE':>11s}{'moved':>9s}{'ts+':>5s}{'slot+':>6s} | "
+          f"{'MULTIPLIER':>19s}{'PER SHARE':>11s}{'ON-CHAIN':>11s}{'basis':>9s}{'bare':>9s}")
 
     rows = []
     for sym in (s for s, _m in FEEDS.values()):
         a, b = first[sym], second[sym]
         d = dex_second.get(sym)
-        basis_bps = (d - b["price"]) / b["price"] * 1e4 if d else None
+        m = mults[sym]["multiplier"]
+        per_share = b["price"] / m
+        basis_bps = (d - per_share) / per_share * 1e4 if d else None
+        bare_bps = (d - b["price"]) / b["price"] * 1e4 if d else None
         rows.append({"symbol": sym, "oracle_price": b["price"],
                      "oracle_price_moved": round(b["price"] - a["price"], 10),
                      "oracle_ts_advanced_s": b["ts"] - a["ts"],
                      "oracle_slot_advanced": b["slot"] - a["slot"],
                      "oracle_reported_age_s": int(taken.timestamp()) - b["ts"],
-                     "dex_price": d, "basis_bps": round(basis_bps, 1) if basis_bps else None})
-        print(f"{sym:8s}{b['price']:12.4f}{b['price']-a['price']:9.4f}"
-              f"{b['ts']-a['ts']:6d}{b['slot']-a['slot']:7d} | "
-              f"{(d or 0):11.4f}{(basis_bps or 0):+8.1f}b")
+                     "multiplier": m,
+                     "multiplier_pending": mults[sym]["pending"],
+                     "oracle_price_per_share": per_share,
+                     "dex_price": d,
+                     "basis_bps": round(basis_bps, 1) if basis_bps is not None else None,
+                     "basis_bps_bare": round(bare_bps, 1) if bare_bps is not None else None})
+        pending = mults[sym]["pending"]
+        print(f"{sym:7s}{b['price']:11.4f}{b['price'] - a['price']:9.4f}"
+              f"{b['ts'] - a['ts']:5d}{b['slot'] - a['slot']:6d} | "
+              f"{repr(m):>19s}{per_share:11.4f}{cell(d, '11.4f', 11)}"
+              f"{cell(basis_bps, '+9.1f', 9)}{cell(bare_bps, '+9.1f', 9)}"
+              + (f"   pending -> {pending['multiplier']} at {pending['effective_ts']}" if pending else ""))
+
+    print("\nbasis = (on-chain - oracle / multiplier) / (oracle / multiplier), in bps.")
+    print("bare  = (on-chain - oracle) / oracle: mixed units, off by the multiplier. Shown so the correction is visible.")
 
     snap = {"taken_at": taken.isoformat(), "gap_seconds": args.gap,
             "oracle_account": SCOPE_PRICES, "oracle_program": SCOPE_PROGRAM,
-            "dex_price_source": "jup.ag price v3", "rows": rows}
+            "dex_price_source": "jup.ag price v3", "multiplier_clock_unix": chain_now,
+            "basis_method": BASIS_METHOD, "rows": rows}
     if args.out:
         with open(args.out, "w") as fh:
             json.dump(snap, fh, indent=2)

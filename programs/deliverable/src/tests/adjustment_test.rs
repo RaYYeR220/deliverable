@@ -33,8 +33,8 @@ fn series_at_multiplier(m0: u128, strike0: u64, contract_raw_size: u64) -> Optio
     build(m0, strike0, contract_raw_size, true)
 }
 
-/// The same contract written by a venue that does not adjust — which is every
-/// options venue on tokenized equities today, by omission.
+/// The same contract written without adjustment, ignoring the mint: the
+/// negative control the invariant tests are checked against.
 fn series_with_adjustment_disabled(m0: u128, strike0: u64, contract_raw_size: u64) -> OptionSeries {
     build(m0, strike0, contract_raw_size, false)
 }

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import {
+  decodeMintState,
   decodeScopeEntry,
   DEFAULT_MAX_CONF_BPS,
   DEFAULT_MAX_DIVERGENCE_BPS,
@@ -12,6 +13,7 @@ import {
   SCOPE_PRICES_ADDRESS,
   SCOPE_PRICES_OFFSET,
   SCOPE_PROGRAM_ADDRESS,
+  uiMultiplierAt,
   US_EQUITY_CALENDAR,
   type CalendarLike,
   type ScopeLabel,
@@ -20,7 +22,7 @@ import {
 import { CLUSTER, CLUSTER_LABEL, SECURITIES } from '@/lib/config';
 import type { BasisRow, BasisView, GateView, RailSnapshot, Sourced } from '@/lib/types';
 
-import { BASIS_FEEDS, JUPITER_PRICE_V3 } from './feeds';
+import { BASIS_FEEDS, JUPITER_PRICE_V3, perShareBasis } from './feeds';
 import { buildGateView, labelMap, lastClose } from './gate';
 import { deliverable, describeFailure, PROGRAM_ADDRESS, SourceUnavailable, type Address } from './rpc';
 
@@ -93,7 +95,7 @@ async function readGate(security: Security, mode: 'live' | 'preview'): Promise<G
   });
 }
 
-/** jup.ag price v3, as scripts/measure-basis.py reads it: the price the token trades at on chain. */
+/** jup.ag price v3, as scripts/measure-basis.py reads it: the price one share trades at on chain. */
 async function readMarketPrices(mints: readonly string[]): Promise<Map<string, number | null>> {
   const response = await fetch(`${JUPITER_PRICE_V3}?ids=${mints.join(',')}`, {
     headers: { accept: 'application/json' },
@@ -112,13 +114,16 @@ async function readMarketPrices(mints: readonly string[]): Promise<Map<string, n
 
 async function readBasis(): Promise<BasisView> {
   const d = deliverable();
+  // The Scope account, the clock and every mint in one call, so the multiplier applied to
+  // each price is the one in force at the slot the price was read at.
+  const mints = BASIS_FEEDS.map((f) => f.mint as Address);
   const [accounts, labels, market] = await Promise.all([
-    d.rpc.getMultipleAccounts([SCOPE_PRICES_ADDRESS, CLOCK_SYSVAR], { encoding: 'base64' }).send(),
+    d.rpc.getMultipleAccounts([SCOPE_PRICES_ADDRESS, CLOCK_SYSVAR, ...mints], { encoding: 'base64' }).send(),
     d.scopeLabels().catch((): ScopeLabel[] => []),
     settle(readMarketPrices(BASIS_FEEDS.map((f) => f.mint))),
   ]);
 
-  const [scopeAccount, clockAccount] = accounts.value;
+  const [scopeAccount, clockAccount, ...mintAccounts] = accounts.value;
   if (!scopeAccount) throw new SourceUnavailable('The Scope OraclePrices account was not returned by the RPC.');
   if (scopeAccount.owner !== SCOPE_PROGRAM_ADDRESS) throw new SourceUnavailable('The Scope OraclePrices account is not owned by Scope.');
   if (!clockAccount) throw new SourceUnavailable('The Clock sysvar was not returned by the RPC.');
@@ -127,12 +132,18 @@ async function readBasis(): Promise<BasisView> {
   const now = Number(Buffer.from(clockAccount.data[0], 'base64').readBigInt64LE(CLOCK_UNIX_TIMESTAMP_OFFSET));
   const names = labelMap(labels);
 
-  const rows: BasisRow[] = BASIS_FEEDS.map((feed) => {
+  const rows: BasisRow[] = BASIS_FEEDS.map((feed, i) => {
     const observation = decodeScopeEntry(scope, feed.index);
     const oraclePrice = observationToNumber(observation);
     const oracleTs = Number(observation.publishTs);
     const oracleSlot = Number(scope.readBigUInt64LE(SCOPE_PRICES_OFFSET + feed.index * SCOPE_ENTRY_SIZE + SCOPE_SLOT_OFFSET));
     const marketPrice = market.ok ? (market.value.get(feed.mint) ?? null) : null;
+    // A mint that cannot be read leaves the basis empty rather than computed in mixed units.
+    const mintAccount = mintAccounts[i];
+    const multiplier = mintAccount
+      ? uiMultiplierAt(decodeMintState(feed.mint as Address, Buffer.from(mintAccount.data[0], 'base64')).scaledUiAmount, BigInt(now))
+      : null;
+    const basis = multiplier !== null ? perShareBasis(oraclePrice, multiplier, marketPrice) : null;
     return {
       symbol: feed.symbol,
       mint: feed.mint,
@@ -142,8 +153,11 @@ async function readBasis(): Promise<BasisView> {
       oracleTs,
       oracleSlot,
       reportedAge: now - oracleTs,
+      multiplier,
+      oraclePerShare: basis?.oraclePerShare ?? null,
       marketPrice,
-      basisBps: marketPrice === null ? null : ((marketPrice - oraclePrice) / oraclePrice) * 10_000,
+      basisBps: basis?.basisBps ?? null,
+      basisBareBps: basis?.basisBareBps ?? null,
     };
   });
 
@@ -157,6 +171,7 @@ async function readBasis(): Promise<BasisView> {
     market: { ok: market.ok, error: market.ok ? null : market.error, source: 'jup.ag price v3' },
     gapSeconds: null,
     record: null,
+    multiplierSource: 'read from each mint in the same RPC call as the oracle, in force at the chain clock',
   };
 }
 

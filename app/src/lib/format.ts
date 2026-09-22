@@ -85,9 +85,9 @@ export function price(value: number, places = 4): string {
   return minus(value.toFixed(places));
 }
 
-export function bps(value: number): string {
-  const rounded = Math.round(value);
-  return `${rounded > 0 ? '+' : ''}${minus(String(rounded))} bps`;
+export function bps(value: number, places = 1): string {
+  const text = value.toFixed(places);
+  return `${Number(text) > 0 ? '+' : ''}${minus(text)} bps`;
 }
 
 export function signed(value: number, places = 4): string {

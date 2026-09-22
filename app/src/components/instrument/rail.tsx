@@ -168,9 +168,10 @@ export function Rail({ replay }: { replay: ReplayData }) {
           ) : (
             <>
               <strong>Replay.</strong> The gate against the Scope account and the mints as recorded from mainnet, with
-              the clock set to {utc(replay.clock)} ({etTime(replay.clock)}), Sunday 2026-09-20. Replay is not a
-              simulation. It is the same code path executing against real recorded account data with a controlled
-              clock, which is exactly what the tests do.
+              the clock set to {utc(replay.clock)} ({etTime(replay.clock)}), Sunday 2026-09-20. What runs here is the
+              SDK&rsquo;s TypeScript port of the gate, not the compiled program. The compiled program runs against the
+              same Scope and AAPLx bytes in the LiteSVM tests, and a drift test pins the port to the program&rsquo;s
+              check order and refusal codes.
             </>
           )}
         </p>
@@ -271,9 +272,9 @@ export function Rail({ replay }: { replay: ReplayData }) {
         </h2>
         <p className="i-intro">
           {mode === 'replay'
-            ? 'The measurement as it was taken at 09:15 UTC that Sunday, an hour before the Scope account the gate replays was captured: the Scope entries tokenized-equity lending marks against, beside the price each token was trading at on chain.'
-            : 'The Scope entries tokenized-equity lending marks against, beside the price each token is trading at on chain right now, read on the server the way scripts/measure-basis.py reads them.'}{' '}
-          A feed can report itself seconds old while carrying a price from the last close.
+            ? 'The measurement as it was taken at 09:15 UTC that Sunday, an hour before the Scope account the gate replays was captured: the Scope entries tokenized-equity lending marks against, beside the price one share was trading at on chain, converted to the same unit with each mint’s multiplier.'
+            : 'The Scope entries tokenized-equity lending marks against, beside the price one share is trading at on chain right now, converted to the same unit with each mint’s multiplier, read on the server the way scripts/measure-basis.py reads them.'}{' '}
+          A feed can report itself seconds old while carrying a price that has not moved since the market closed.
         </p>
         <Basis result={basis} anchor={mode === 'replay' ? null : anchor} />
       </section>

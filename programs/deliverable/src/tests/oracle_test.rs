@@ -59,7 +59,8 @@ fn scope_carries_no_confidence_so_we_do_not_invent_one() {
 
 /// The headline measurement, re-derived from the account itself: the
 /// timestamp is seconds old while the price has not moved since Friday's
-/// close 61 hours earlier. Every freshness check a program can perform passes.
+/// close 38 hours earlier (20:00 UTC Friday to the capture's 10:14:54 UTC
+/// Sunday stamp). Every freshness check a program can perform passes.
 #[test]
 fn scope_timestamp_is_fresh_while_the_market_has_been_shut_for_days() {
     let aapl = scope::decode(SCOPE_PRICES_DATA, SCOPE_AAPLX_CHECKED).unwrap();

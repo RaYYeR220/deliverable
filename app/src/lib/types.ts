@@ -76,8 +76,16 @@ export interface BasisRow {
   oracleTs: number;
   oracleSlot: number | null;
   reportedAge: number;
+  /** The mint's ScaledUiAmount multiplier in force at the read: shares per unscaled token. */
+  multiplier: number | null;
+  /** `oraclePrice / multiplier`: the oracle in the unit the market price is quoted in. */
+  oraclePerShare: number | null;
+  /** jup.ag `usdPrice`, per share. */
   marketPrice: number | null;
+  /** Like for like: (market - oracle per share) / oracle per share. */
   basisBps: number | null;
+  /** (market - oracle) / oracle, mixing units. Shown so the correction stays visible. */
+  basisBareBps: number | null;
   /** Present on a pinned record: the second sample against the first. */
   moved?: number;
   tsAdvanced?: number;
@@ -97,6 +105,8 @@ export interface BasisView {
   gapSeconds: number | null;
   /** Pinned only: the file the record came from. */
   record: string | null;
+  /** Where the multipliers came from, in words. */
+  multiplierSource: string;
 }
 
 export interface RailSnapshot {

@@ -282,8 +282,9 @@ fn permits_a_fresh_price_in_an_open_session() {
 
 #[test]
 fn a_scheduled_dividend_weeks_out_does_not_close_the_venue() {
-    // Only an imminent change refuses. 66 of 100 xStocks are accruing
-    // dividends at any moment; refusing on all of them would be a dead market.
+    // Only an imminent change refuses. A change scheduled weeks out is refused
+    // only once it is inside the quiet period, so routine dividend steps do not
+    // close the venue in the meantime.
     let g = inputs()
         .at(open_monday())
         .with_pending_multiplier(open_monday() + 14 * 86_400);
@@ -331,7 +332,7 @@ fn a_stale_corroborating_source_refuses_like_a_stale_primary() {
 #[test]
 fn the_calendar_is_checked_before_any_oracle() {
     // Everything is wrong at once. The refusal we publish is the one that needs
-    // no oracle to establish, which is also the one that is true 70% of the week.
+    // no oracle to establish, which is also the one that is true about 81% of the week.
     let g = inputs()
         .at(1_789_895_700)
         .with_halt(true)
