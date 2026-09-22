@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# rust / anchor
+target/
+**/*.rs.bk
+test-ledger/
+.anchor/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+keypairs/
+!keypairs/*.pub
+
+# build output
+dist/
+build/
+.next/
+out/
+
+# editor / os
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# local validator / fork state
+.surfpool/
+test-ledger/
+.tmp/
