@@ -50,7 +50,9 @@ What to expect depends on when you run it:
   move`.
 - **Inside a regular session**, the feed should move, and check 1 says so and tells you when to
   rerun. It does not report that as a failure.
-- **Check 9** is SKIP until a deployment is recorded in [PROOF.md](PROOF.md).
+- **Check 9** passes once you point it at the devnet deployment:
+  `DELIVERABLE_PROGRAM_ID=DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa DELIVERABLE_CLUSTER=devnet pnpm verify`.
+  Without those two variables it SKIPs.
 
 This is a run from inside a regular session on 2026-09-22. Lines are omitted, not edited:
 
@@ -164,9 +166,12 @@ per verifiable item.
    signed attestation. As shipped, the signer is our own key. The design lets an independently
    signed feed replace it without a program change, but none does today. This is the weakest link
    in the refusal chain (MOCKS.md, "Conventions").
-2. **The program is not deployed.** Everything it does is shown under LiteSVM against real mainnet
-   bytes. The app's Live mode has nothing to read yet, and no refusal has been observed on a live
-   cluster (PROOF.md, "Deployments"; CLAIMS.md N15).
+2. **The program is on devnet, not mainnet, and against a stand-in mint.** Devnet has the Pyth
+   receiver but no xStocks and no Scope, so the registered security is a Token-2022 stand-in
+   carrying AAPLx's extension set, bound to Pyth alone — which is why the live gate refuses with
+   `SingleSource`. The write-and-exercise path is proven under LiteSVM against real mainnet bytes,
+   not on a cluster. The deployed binary is also **not** a verified build (PROOF.md,
+   "Deployments: the program on devnet").
 3. **Replay is the SDK's port of the gate, not the compiled program.** The port is tested
    case-for-case against `gate.rs`, a drift test pins it to the program's check order and refusal
    codes, and the program tests run the Rust gate against the same Scope and AAPLx bytes. It is

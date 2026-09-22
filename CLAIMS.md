@@ -231,8 +231,9 @@ We do not claim any of the following, including the ones a reader might assume.
   the keeper classifies by ratio and marks its confidence.
 - **N14.** That a Preview verdict is what the deployed program would say. Preview uses conventional
   bindings and default tolerances, and it cannot see a halt.
-- **N15.** That a refusal event has been observed on a live cluster. Refusal events are tested under
-  LiteSVM only, because the program is not deployed.
+- **N15.** That a refusal event has been observed on a live cluster *for a real xStock*. One has
+  been observed on devnet — code 9, `SingleSource`, in transaction `3oVqe7Qs…7AukR` — but against
+  the devnet stand-in mint, not a real xStock, and no mainnet deployment exists.
 - **N16.** That there is a liquidation engine. The venue is fully collateralised and nothing is
   liquidated. The oracle failure we document is fatal to lending, and we did not build a fix for
   lending.
