@@ -1,0 +1,8 @@
+{
+  "mint": "8FBsKWYuBWwn2zo2viDrjdMeN8CrVH5WbaY8YaJMvJDm",
+  "decimals": 8,
+  "symbol": "AAPLd",
+  "createdAt": "2026-09-22T08:30:18.975Z",
+  "signature": "3fYZDZuH5R87ZLBWts77bgNRErBpMGVKEmEsExVyHkegV62LguSGZpsu2UxcyyGCT1hgvjpWCn6eByKoipVaEZCq",
+  "note": "Devnet-only Token-2022 stand-in for an xStock. 8 decimals, no transfer fee, no PermanentDelegate (see devnet-quote.ts)."
+}

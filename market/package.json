@@ -1,0 +1,32 @@
+{
+  "name": "@stocklana/market",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Option-series market layer: a Meteora Dynamic Bonding Curve pool per covered-call series, quoted in the underlying tokenised stock, whose curve is an option pricing surface.",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "curve": "tsx src/curve.ts",
+    "series": "tsx src/config.ts",
+    "quote": "tsx src/quote.ts",
+    "verify": "tsx src/verify.ts",
+    "devnet-quote": "tsx src/devnet-quote.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@meteora-ag/dynamic-bonding-curve-sdk": "1.5.12",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/spl-token-metadata": "^0.1.6",
+    "@solana/web3.js": "^1.98.0",
+    "bn.js": "^5.2.1",
+    "decimal.js": "^10.4.3"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.6",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

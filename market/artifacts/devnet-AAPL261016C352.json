@@ -1,0 +1,185 @@
+{
+  "cluster": "devnet",
+  "createdAt": "2026-09-22T08:35:07.124Z",
+  "dbcProgram": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+  "series": {
+    "underlying": "AAPL",
+    "spot": 335,
+    "strike": 352,
+    "expiryTs": 1792180800,
+    "now": 1790066103,
+    "contractSize": 1,
+    "volAnnual": 0.3,
+    "symbol": "AAPL261016C352",
+    "name": "AAPL 2026-10-16 352 Call",
+    "quoteSymbol": "AAPLd"
+  },
+  "curveOptions": {
+    "contracts": 1000,
+    "inventoryVolPremium": 0.5,
+    "segments": 16,
+    "riskFreeRate": 0,
+    "startingFeeBps": 200,
+    "endingFeeBps": 25,
+    "feePeriods": 60,
+    "leftoverFraction": 0.01,
+    "creatorTradingFeePercentage": 80,
+    "priceTolerance": 1e-9
+  },
+  "accounts": {
+    "config": "1prrFtvBA586zykqwzKkdqhK1zQ87PgaVzFk7kZLrJk",
+    "baseMint": "B9vKorB3wdL7tcxF5yNuMQbK4cS5ew6GNd13VaFBDoJ3",
+    "pool": "5YbMsAxCcgTkpyhzegHLq52faiSuUNTAkVmGgCNW1H1L",
+    "quoteMint": "8FBsKWYuBWwn2zo2viDrjdMeN8CrVH5WbaY8YaJMvJDm",
+    "tokenBadge": null,
+    "creator": "4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo",
+    "feeClaimer": "4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo",
+    "leftoverReceiver": "4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo"
+  },
+  "requestedConfig": {
+    "poolFees": {
+      "baseFee": {
+        "cliffFeeNumerator": "20000000",
+        "firstFactor": 60,
+        "secondFactor": "35244",
+        "thirdFactor": "340",
+        "baseFeeMode": 1
+      },
+      "dynamicFee": null
+    },
+    "activationType": 1,
+    "collectFeeMode": 0,
+    "migrationOption": 1,
+    "tokenType": 1,
+    "tokenDecimal": 8,
+    "migrationQuoteThreshold": "1109311667",
+    "partnerLiquidityPercentage": 0,
+    "partnerPermanentLockedLiquidityPercentage": 0,
+    "creatorLiquidityPercentage": 90,
+    "creatorPermanentLockedLiquidityPercentage": 10,
+    "sqrtStartPrice": "2072594964962959093",
+    "lockedVesting": {
+      "amountPerPeriod": "0",
+      "cliffDurationFromMigrationTime": "0",
+      "frequency": "0",
+      "numberOfPeriod": "0",
+      "cliffUnlockAmount": "0"
+    },
+    "migrationFeeOption": 0,
+    "tokenSupply": {
+      "preMigrationTokenSupply": "100000000000",
+      "postMigrationTokenSupply": "100000000000"
+    },
+    "creatorTradingFeePercentage": 80,
+    "migratedPoolFee": {
+      "collectFeeMode": 0,
+      "dynamicFee": 0,
+      "poolFeeBps": 0
+    },
+    "poolCreationFee": "0",
+    "partnerLiquidityVestingInfo": {
+      "vestingPercentage": 0,
+      "bpsPerPeriod": 0,
+      "numberOfPeriods": 0,
+      "cliffDurationFromMigrationTime": 0,
+      "frequency": 0
+    },
+    "creatorLiquidityVestingInfo": {
+      "vestingPercentage": 0,
+      "bpsPerPeriod": 0,
+      "numberOfPeriods": 0,
+      "cliffDurationFromMigrationTime": 0,
+      "frequency": 0
+    },
+    "migratedPoolBaseFeeMode": 0,
+    "migratedPoolMarketCapFeeSchedulerParams": {
+      "numberOfPeriod": 0,
+      "sqrtPriceStepBps": 0,
+      "schedulerExpirationDuration": 0,
+      "reductionFactor": "0"
+    },
+    "enableFirstSwapWithMinFee": false,
+    "compoundingFeeBps": 0,
+    "padding": [],
+    "curve": [
+      {
+        "sqrtPrice": "2138402158176879850",
+        "liquidity": "240396033530820414230000000000"
+      },
+      {
+        "sqrtPrice": "2202973766230216308",
+        "liquidity": "260407777016045351190000000000"
+      },
+      {
+        "sqrtPrice": "2266361441120148346",
+        "liquidity": "281145100164049076770000000000"
+      },
+      {
+        "sqrtPrice": "2328614295873957917",
+        "liquidity": "302596780381559040640000000000"
+      },
+      {
+        "sqrtPrice": "2389778951712133832",
+        "liquidity": "324751822732421400460000000000"
+      },
+      {
+        "sqrtPrice": "2449899613214915522",
+        "liquidity": "347599475948287446770000000000"
+      },
+      {
+        "sqrtPrice": "2509018161429499323",
+        "liquidity": "371129243400359778560000000000"
+      },
+      {
+        "sqrtPrice": "2567174257673555578",
+        "liquidity": "395330890029832874310000000000"
+      },
+      {
+        "sqrtPrice": "2624405452850190718",
+        "liquidity": "420194446048872435930000000000"
+      },
+      {
+        "sqrtPrice": "2680747298597601391",
+        "liquidity": "445710208064828425180000000000"
+      },
+      {
+        "sqrtPrice": "2736233457698901718",
+        "liquidity": "471868738171770351650000000000"
+      },
+      {
+        "sqrtPrice": "2790895811986242841",
+        "liquidity": "498660861437842400180000000000"
+      },
+      {
+        "sqrtPrice": "2844764566562632838",
+        "liquidity": "526077662148056223970000000000"
+      },
+      {
+        "sqrtPrice": "2897868349594836518",
+        "liquidity": "554110479089122660190000000000"
+      },
+      {
+        "sqrtPrice": "2950234307242138140",
+        "liquidity": "582750900110635492610000000000"
+      },
+      {
+        "sqrtPrice": "3001888193509338358",
+        "liquidity": "611990756157651933950000000000"
+      }
+    ],
+    "migrationFee": {
+      "feePercentage": 0,
+      "creatorFeePercentage": 0
+    },
+    "tokenUpdateAuthority": 1
+  },
+  "signatures": {
+    "createConfig": "2744ZVuMek7NzNxLKXsScJjRjnDoHg9C27THejW78QPVmg384GNQpWsacuxG6mFyXmLT1WKvo75YrXaecZS3PRXk",
+    "createPool": "2KUNZatcvJWtZnoZsmkQFXfAcyoHWo9geYtZTrNRhFgR5rGtUCx957YmG8FeGTeba7UGvray3zZC4CMZdwG4VSK3"
+  },
+  "costsLamports": {
+    "createConfig": 5984080,
+    "createPool": 8249760,
+    "total": 14233840
+  }
+}
