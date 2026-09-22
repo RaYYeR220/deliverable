@@ -1,0 +1,21 @@
+{
+  "name": "@stocklana/keeper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Corporate-action feed for xStocks tokenised equities on Solana: reads Token-2022 ScaledUiAmount multipliers, recovers the transactions that changed them, and reads the Kamino Scope price oracle.",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "watch": "tsx src/multiplier-watch.ts",
+    "history": "tsx src/action-history.ts",
+    "oracle": "tsx src/scope-oracle.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
