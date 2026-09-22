@@ -9,23 +9,20 @@ evidence tier for each claim.
 
 ## Deployments
 
-This section is empty because nothing has been deployed yet.
-
-- **The program** targets devnet. The IDL declares `DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa`.
-  When this was written (2026-09-22, devnet slot 502466130), that address held no account on
-  devnet.
-- **The series pool** is a Meteora DBC pool for one covered-call series, quoted in AAPLx. It targets
-  mainnet. Its two transactions have been simulated against live mainnet state and not sent
-  ([`market/README.md`](market/README.md), "Mainnet — simulated against live state"). No mainnet
-  signature exists yet. The same flow runs end to end on devnet with a stand-in quote mint (see
+- **The program is on devnet.** `DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa`, deployed at devnet
+  slot 502514997. Its live gate probes, the accounts it initialised and the devnet stand-in mint it
+  runs against are listed in [Deployments: the program on devnet](#deployments-the-program-on-devnet)
+  below. It is **not** a verified build: see that section for why.
+- **The series pool is not on mainnet yet.** It is a Meteora DBC pool for one covered-call series,
+  quoted in AAPLx. Its two transactions have been simulated against live mainnet state and not sent
+  ([`market/README.md`](market/README.md), "Mainnet — simulated against live state"), so no mainnet
+  signature exists. The same flow runs end to end on devnet with a stand-in quote mint (see
   [Devnet: the series market](#devnet-the-series-market-end-to-end) below).
 
-Once each deployment exists, this section will list its address, deploy signature and slot. You can
-check them yourself:
+Check the program yourself:
 
 ```bash
-cd scripts && DELIVERABLE_PROGRAM_ID=<id> DELIVERABLE_CLUSTER=devnet pnpm verify   # check 9
-cd market  && pnpm run verify --mainnet --yes --series=<SYMBOL>                     # the pool
+cd scripts && DELIVERABLE_PROGRAM_ID=DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa DELIVERABLE_CLUSTER=devnet pnpm verify   # check 9
 ```
 
 ---
@@ -150,3 +147,77 @@ The fixtures can be cross-checked against each other and against the chain. In `
 entries 317 and 332 hold 336.70209695342584 and 222.3476146539344. The weekend measurement recorded
 exactly those values an hour earlier, using a different script. The `ScaledUiAmount` fields in
 `aaplx_mint.bin` match the live mint as verify-onchain read it on 2026-09-22 (check 3).
+
+## Deployments: the program on devnet
+
+Everything in this section is **devnet** and was sent on 2026-09-22. The steps to reproduce it are
+in [`scripts/devnet/README.md`](scripts/devnet/README.md). Every address and
+signature below also appears in [`scripts/devnet/deployment.json`](scripts/devnet/deployment.json).
+
+Devnet has the Pyth receiver. It has no xStocks mints and no Kamino Scope account. So the security
+is a Token-2022 **stand-in** mint we created, priced by **real Pyth `Equity.US.AAPL/USD` updates**
+that post through the real receiver with full Wormhole verification. It is bound to Pyth as a
+**single declared source**, because devnet has no second, independent vendor. The gate therefore
+refuses by design: `SingleSource` (9) during the session and `MarketClosed` (1) outside it. It is not
+given a second source, and no mock oracle is involved.
+
+### Program
+
+| item | value |
+|---|---|
+| program id | [`DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa`](https://explorer.solana.com/address/DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa?cluster=devnet), executable |
+| deploy transaction | [`9CFe4pXu…kLkP`](https://explorer.solana.com/tx/9CFe4pXu8WMq7KpMDG17hV5kM7TWe8r7HiD43j1Ca3hFcqRQMji5VtzY46nVpBd3PKenMaqty5BQpeXwYAQkLkP?cluster=devnet), slot 502514997, 16:39:03 UTC |
+| programdata | [`7BWNhWUjQgKn9ZBAWiyUcyriYrYz8Y8vy7q8NJ4JR2Mi`](https://explorer.solana.com/address/7BWNhWUjQgKn9ZBAWiyUcyriYrYz8Y8vy7q8NJ4JR2Mi?cluster=devnet) |
+| upgrade authority | `4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo` |
+| binary | `anchor build --tools-version v1.52 --arch v0`: 428,928 bytes, sha256 `93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41`. `solana program dump` of the deployed program gives the same hash. |
+| SOL spent | 2.183428328 SOL (wallet 11.246332597, then 9.062904269). Of that, 2.180666200 SOL is rent held by the program and programdata accounts. The rest is fees, including 0.000495 SOL for a first attempt that failed mid-write and whose buffer was closed. |
+| verified build | **Not verified.** `solana-verify` 0.5.2 does not compile on Windows (`cargo install` fails: `unresolved import signal_hook::iterator`, which is Unix-only). Docker 29.5.2 is running, but the deployed binary is a Windows build that embeds backslash source paths such as `programs\deliverable\src\gate.rs`, so a Linux container build cannot reproduce it byte for byte. A verified build would mean building in `solanafoundation/solana-verifiable-build`, deploying that binary instead, and running `verify-from-repo` against a public commit. None of that has been done. |
+
+`DELIVERABLE_PROGRAM_ID=DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa DELIVERABLE_CLUSTER=devnet pnpm verify`
+in `scripts/` reports check 9 PASS: "the program exists on devnet and is executable".
+
+### Accounts
+
+| account | address | created by |
+|---|---|---|
+| Registry (authority `4EtAFmWt…CYKo`, attestor `J1uaVh6B…v5Tu`, not paused) | [`DiK3Y7ZCK7n1ftXXQ6fboChc6MiiVhJdTu6GxCJf36Ls`](https://explorer.solana.com/address/DiK3Y7ZCK7n1ftXXQ6fboChc6MiiVhJdTu6GxCJf36Ls?cluster=devnet) | `init_registry` [`39oAup6Y…cf6R`](https://explorer.solana.com/tx/39oAup6YT18KApkUURkbjzQpawMp8FvjfzesfJyrQ33SLvrtuFGFzk6yTBVXeBdvKdDXPTZHdvP2ypcaj3jdcf6R?cluster=devnet) |
+| Calendar 0, US equities: 09:30 to 16:00 ET, the 12 entries of `US_EQUITY_2026_2027` | [`GcsF2uRFUydCCFEU1nDDr7NYj19iisojcshgzk1btNAF`](https://explorer.solana.com/address/GcsF2uRFUydCCFEU1nDDr7NYj19iisojcshgzk1btNAF?cluster=devnet) | `init_calendar` [`3LnaPtkx…gLW9`](https://explorer.solana.com/tx/3LnaPtkxwjgXdiKJqHw2abcTv7Ue9PdFGeXmt4HrvASGSew2fLe4Fnrf7BXwmf6KNM73EkVxvzUmR1D39YCJgLW9?cluster=devnet), `append_calendar_entries` [`4zS5NwHn…Y4U9`](https://explorer.solana.com/tx/4zS5NwHnhVgBQZy4UrQh3iqfQQmXN6mgH6AHN4yFqrfwDvbAGiLwxSk8zj59AyMqSgNrfYMJf9tyg9qvY7hBY4U9?cluster=devnet) |
+| **Stand-in** mint `AAPLd`, "AAPLx devnet stand-in" (Token-2022, **not an xStock**, zero supply) | [`8AWMhkJ61ifBkkKsXMNYoCb8HmthjRaQk5kjBMCQjq32`](https://explorer.solana.com/address/8AWMhkJ61ifBkkKsXMNYoCb8HmthjRaQk5kjBMCQjq32?cluster=devnet) | [`DYATy4kz…DZJ4`](https://explorer.solana.com/tx/DYATy4kzM5JAZ6LEiopUJbYi6NFRfAzRozdDVKuKArPaBiG3rsdeek5qPWb71i5EfPcJmp5ef9VFRsGQLgcDZJ4?cluster=devnet), metadata [`3MBnpNE3…zH3U`](https://explorer.solana.com/tx/3MBnpNE3kuHBu3A3E4Rjc7rT2ea8jBz6rhRNNCjoNhGkarJ1whxkYFhYHE1aVZBRfAQxb1JhJiMJFcYH2NJpzH3U?cluster=devnet) |
+| SecurityState for the stand-in, `SingleDeclared { Pyth Equity.US.AAPL/USD }` | [`4d8cqHM7UZgJnqbifntNa8GkLnpL89UPPpj2a3WUJ2fT`](https://explorer.solana.com/address/4d8cqHM7UZgJnqbifntNa8GkLnpL89UPPpj2a3WUJ2fT?cluster=devnet) | `register_security` [`2pxKXtjZ…7Gvn`](https://explorer.solana.com/tx/2pxKXtjZNqS4hiT5oHpmoBrYHAXHYkZGPqtJaunUXQMsEt7sW7sYYmXhhZ5bn6YwK4Bh6wiPxaYMMuT3DB9e7Gvn?cluster=devnet) |
+
+**Why the stand-in, and what it is.** Devnet has no xStocks mint to register. The stand-in gives the
+program's mint reads real Token-2022 extension layouts to decode. Read back from devnet, it carries
+the extensions of mainnet AAPLx `XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp`:
+
+- ScaledUiAmount, multiplier `1.0032690125398187`
+- Pausable, not paused
+- TransferHook, program id null
+- PermanentDelegate
+- DefaultAccountState `Initialized`
+- ConfidentialTransferMint
+- MetadataPointer and TokenMetadata
+
+Its metadata also carries `standin_for` and `note` fields that say what it is. It is a different
+mint from the `AAPLd` quote mint `8FBsKWYu…vJDm` that the series market section above uses.
+
+### Gate probes
+
+| probe | chain time (UTC) | session | Pyth update the gate read | transactions | verdict |
+|---|---|---|---|---|---|
+| 1 | 2026-09-22 16:48:23 (12:48 ET) | Regular | `Equity.US.AAPL/USD` 342.43997 ± 0.02997 (0.875 bps), `publish_time` 16:48:21, Full verification, [`9YWnGvx5…i6N9`](https://explorer.solana.com/address/9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9?cluster=devnet) | Wormhole `VerifyEncodedVaaV1` [`5tb3KoaZ…VMjQ`](https://explorer.solana.com/tx/5tb3KoaZoNLNKDM6YKaAWTwpwDFjFk3EmkGtuyyAeGM7vinpRe3Jkbe9kX3kydhhyT5WcSjGyt6WiheRWxQjVMjQ?cluster=devnet) (encoded VAA [`HgDKQvNG…KPZM`](https://explorer.solana.com/address/HgDKQvNGjS7NDTw7yiyJz4eSMS1LC2dkJ5Zex4utKPZM?cluster=devnet)); receiver `PostUpdate` + `sync_security` + `probe_security` [`3oVqe7Qs…AukR`](https://explorer.solana.com/tx/3oVqe7QsoC6jLAHSzfXcr66nMgzSEaUrgWjvsEpxktSjMUxjA9BVe7ZUKrqz6AUpUT4TNb6cjJ2etWMeTFA7AukR?cluster=devnet) | **9 `SingleSource`** |
+| 2 | not yet sent: it has to go out after 20:00 UTC | Closed | none: the calendar decides before any oracle is read | `cd scripts/devnet && pnpm tsx probe.ts --closed` | expected 1 `MarketClosed`, not yet observed |
+
+In probe 1, the gate ran after the update was 2 s old, within the 60 s bound, and its confidence
+band was 0.875 bps, within the 100 bps bound. Both checks passed on the real update, and the gate
+declined because one uncorroborated number is not a price. The transaction log reads
+`Program log: refused code=9 at=1790095703`, and the `Refused` event carries code 9.
+
+The SecurityState read back after probe 1 (`cd scripts/devnet && pnpm tsx read.ts`):
+
+```text
+refusals            1
+last_refusal_code   9 (SingleSource)
+last_refusal_ts     1790095703 (2026-09-22T16:48:23Z)
+primary             price 34243997 expo -5 = 342.43997, conf 2997 = 0.02997, publish_ts 1790095701
+secondary           none
+```

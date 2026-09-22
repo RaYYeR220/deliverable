@@ -44,6 +44,9 @@ single most expensive mistake available in this repository:
 | `opt-level="z"`, `strip`, `panic="abort"` | 237,944 B |
 | the above, `["cdylib"]` only | **201,856 B** |
 
+Those three figures come from the day-0 build, which carried only a handful of instructions. The
+full program, with the rail and the venue, is **428,928 bytes** under the same profile.
+
 `cargo-build-sbf` disables LTO when a `lib` target is present and warns about it in passing. Dropping
 `"lib"` recovered 36,088 bytes, which at mainnet rent is about **0.18 SOL** of deploy cost. The
 optimisation flags mattered far less than the crate type.
