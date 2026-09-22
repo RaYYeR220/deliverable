@@ -8,9 +8,9 @@ This file draws the line. If something here is vague, treat that as a bug and op
   `Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh` — real Token-2022 mints with real supply, real
   holders and real `ScaledUiAmount` multipliers. There is **no mock token** in this repository.
 - **The oracle.** Kamino Scope `OraclePrices` `3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH`, owned
-  by `HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ`. This is the account tokenized-equity lending on
-  Solana already marks against. There is **no mock oracle** and no admin-signed `update_price`
-  anywhere in this repository.
+  by `HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ`. Kamino's xStocks market prices its AAPLx and
+  NVDAx reserves from entries 317 and 332 of this account; we verified those two and claim no more.
+  There is **no mock oracle** and no admin-signed `update_price` anywhere in this repository.
 - **The measurements.** Both snapshots in `docs/evidence/` were taken by
   `scripts/measure-basis.py` against mainnet, and the script is in the repository so you can take
   your own. Nothing in them is hand-written.
@@ -44,13 +44,20 @@ This file draws the line. If something here is vague, treat that as a bug and op
 
 ## The demo, and what "replay" means
 
-The application has two modes and labels which one is active.
+The application has three modes and always labels which one is active.
 
-- **Live** reads mainnet right now. During US market hours the rail reports *actionable*, because
-  that is the truth. Nothing is staged.
-- **Replay** runs the same program instructions against a **pinned snapshot** — the real Scope
-  account as it stood at 2026-09-20 09:15 UTC — with the clock set to that moment. This exists
-  because judging happens on weekdays, when the headline refusal would not otherwise fire.
+- **Preview** evaluates the gate off-chain through the SDK, against live mainnet accounts, using the
+  committed calendar and the program's default tolerances. It is what you see until a program id is
+  configured. It cannot see a halt, and says so.
+- **Live** reads the deployed program's own `SecurityState`. During US market hours the rail reports
+  *actionable*, because that is the truth. Nothing is staged.
+- **Replay** runs the gate against a **pinned snapshot** — the real Scope account as it stood at
+  2026-09-20 10:14:54 UTC, the moment its entries are stamped with — with the clock set to that
+  moment. This exists because judging happens on weekdays, when the headline refusal would not
+  otherwise fire.
+
+The headline measurement in the README (09:15 UTC) and the replay snapshot (10:14:54 UTC) are two
+different reads taken an hour apart on the same Sunday. Both fall in the same closed-market window.
 
 Replay is **not a simulation**. It is the same code path executing against real recorded account
 data with a controlled clock, which is exactly what the tests do. It is labelled in the interface

@@ -17,19 +17,21 @@ different conditions are indistinguishable from one another:
 
 | condition | danger | how often |
 |---|---|---|
-| market closed — nights, weekends, holidays | none, expected | ~70% of the week |
+| market closed — nights, weekends, holidays | none, expected | ~81% of the week |
 | stock halted — LULD, news pending | extreme | rare, unpredictable |
 | oracle outage | extreme | rare |
 | early close — the half-day before Thanksgiving and Christmas Eve | moderate | twice a year |
 
 The standard defence, `get_price_no_older_than`, is therefore **structurally wrong for equities**.
-Reject stale prices and your product is dead 70% of the week. Accept them and you transact at
-Friday's close during a Monday gap.
+Reject stale prices and your product is dead four-fifths of the week — the regular session is 32.5 of
+168 hours. Accept them and you transact at Friday's close during a Monday gap.
 
 ### And the other failure mode is worse, because it is invisible
 
-Tokenized-equity lending on Solana marks against Kamino's Scope oracle. Here is that account,
-sampled twice ninety seconds apart on Sunday 2026-09-20 at 09:15 UTC — sixty-one hours after the
+Kamino's xStocks lending market holds **$22.8M** of tokenized-equity collateral
+([public API](https://api.kamino.finance/kamino-market/5wJeMrUYECGq41fxRESKALVcHnNX26TAWy4W98yULsua/reserves/metrics?env=mainnet-beta),
+read 2026-09-22), and its AAPLx and NVDAx reserves price from entries 317 and 332 of Scope's
+`OraclePrices` account. Here is that account, sampled twice ninety seconds apart on Sunday 2026-09-20 at 09:15 UTC — thirty-seven hours after the
 NYSE closed:
 
 | | oracle price | moved in 90s | timestamp advanced | slot advanced | on-chain market price | basis |
@@ -42,7 +44,7 @@ NYSE closed:
 | SPYx | 766.4572 | 0.0074 | +82 s | +312 | 761.5214 | −64 bps |
 
 The timestamp advances. The slot advances. The price does not. **Every freshness check a program can
-perform passes**, on a number that is economically sixty-one hours old, while the same asset trades
+perform passes**, on a number that is economically thirty-seven hours old, while the same asset trades
 on-chain 2.7% away from it.
 
 Reproduce it yourself — the two-sample gap is the point:
@@ -71,7 +73,7 @@ It recurs every night, not once a week.
 
 And to be precise about what is and is not being claimed: **the oracle is not broken and it is not
 permanently frozen.** Between those two snapshots it moved a great deal — NVDAx 222.35 → 227.71,
-METAx 669.75 → 747.24 — because the market opened on Monday and it tracked. It freezes exactly while
+METAx 669.79 → 747.24 — because the market opened on Monday and it tracked. It freezes exactly while
 the reference market is shut, which is correct behaviour for a reference feed and catastrophic
 behaviour for anything that settles against it without knowing the difference. Telling those two
 situations apart is what this program does.
