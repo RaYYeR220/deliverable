@@ -1,0 +1,244 @@
+/* The stone, the cut and the set type shared by both surfaces.
+
+   Pale travertine, raking light from the upper left. Only display type is cut: its letter
+   body is the floor of a V-groove, a mid-tone of the stone's own colour, with a shaded wall
+   on the light's side and a lit wall opposite, trading places as the light moves.
+   Everything at reading size is set cleanly, not carved. */
+
+:root{
+  color-scheme: light;
+
+  /* ---- travertine ramp ---- */
+  --tv-0:#F4EFE4;
+  --tv-1:#EFE9DC;
+  --tv-2:#E7E0D1;
+  --tv-3:#DCD4C3;
+  --tv-4:#D2C8B4;
+
+  /* ---- the cut (display inscription only) ----
+     floor: the bottom of the groove. The travertine's own hue taken down in value, held in
+     the 5-7 : 1 band against the stone: legible, and still stone. */
+  --floor:#5A5345;
+  --floor-hi:#5E5748;        /* the floor nearer the light */
+  --floor-lo:#565042;        /* the floor further from it */
+  --floor-deep:#524B3E;      /* REFUSES / REFUSED: cut one step deeper, so the floor sees less light */
+  --floor-drill:#6B6454;     /* interpuncts: a shallow drilled point */
+  /* walls: the wall on the light's side is turned away from it (shade, darker than the floor);
+     the far wall is turned into it (brighter than the flat stone) */
+  --wall-shade:#28231A;
+  --wall-shade-veil:rgba(40,35,26,.40);
+  --wall-lit:#FFFEF8;
+  --wall-lit-veil:rgba(255,254,248,.72);
+  /* grain carried into the floor: the stone's own bedding and pores, faintly */
+  --grain-bed:rgba(24,20,13,.075);
+  --grain-pore:rgba(255,250,236,.06);
+
+  /* ---- set text: never carved, >= 8 : 1 even on the darkest pixel of the stone ---- */
+  --ink:#342B1E;
+  --ink-soft:#4A3F2D;        /* hairlines only */
+
+  /* ---- the only non-stone colour on the page ---- */
+  --bronze:#5C4D25;
+
+  /* ---- stone structure ---- */
+  --bed-a:rgba(51,42,29,.020);
+  --bed-b:rgba(51,42,29,.015);
+  --bed-lite:rgba(255,253,244,.15);
+  --pore:rgba(51,42,29,.018);
+
+  /* ---- monumental spacing ---- */
+  --s1:8px; --s2:16px; --s3:32px; --s4:56px; --s5:96px; --s6:160px; --s7:256px;
+
+  /* ---- light vector: where the source sits, from the centre of the viewport.
+     (+1,+1) = upper left. Signed: when it crosses to the other side, the walls swap. ---- */
+  --lx:1;
+  --ly:1;
+
+  --display:"Cinzel",Trajan,"Times New Roman",serif;
+  --text:"EB Garamond",Georgia,serif;
+  --mono:"Martian Mono",ui-monospace,monospace;
+}
+
+*{box-sizing:border-box;}
+html{overflow-x:hidden; scroll-behavior:smooth;}
+html,body{margin:0; padding:0;}
+body{
+  overflow-x:hidden;
+  color:var(--ink);
+  font-family:var(--text);
+  font-size:18px;
+  line-height:30px;
+  -webkit-font-smoothing:antialiased;
+  background-color:var(--tv-1);
+  background-image:
+    repeating-linear-gradient(92deg,
+      var(--pore) 0px, var(--pore) 1px,
+      transparent 1px, transparent 7px),
+    repeating-linear-gradient(4deg,
+      var(--bed-a) 0px, var(--bed-a) 3px,
+      transparent 3px, transparent 19px),
+    repeating-linear-gradient(6.5deg,
+      var(--bed-b) 0px, var(--bed-b) 7px,
+      transparent 7px, transparent 47px),
+    repeating-linear-gradient(5deg,
+      var(--bed-lite) 0px, var(--bed-lite) 2px,
+      transparent 2px, transparent 59px),
+    /* the raking wash: brightest on the side the light comes from, darkest on the far
+       side, both following the source */
+    radial-gradient(78% 42% at calc(50% - var(--lx) * 20%) calc(40% - var(--ly) * 26%),
+      var(--tv-0) 0%, var(--tv-1) 46%, transparent 76%),
+    radial-gradient(64% 36% at calc(50% + var(--lx) * 24%) calc(50% + var(--ly) * 38%),
+      var(--tv-4) 0%, var(--tv-3) 52%, transparent 80%),
+    linear-gradient(172deg, var(--tv-1) 0%, var(--tv-2) 58%, var(--tv-3) 100%);
+  background-attachment:fixed;
+}
+
+/* ---------- the V-cut: display inscription only ----------
+   Painted bottom to top:
+   1. the walls — filter drop-shadows of the letter itself. The shaded wall is offset TOWARD
+      the light, the lit wall AWAY from it; each shows as a band on its own side of every
+      stroke. Both are signed by --lx/--ly, so when the source crosses the page the bands trade
+      sides. Filters, not text-shadows, so they sit UNDER the floor.
+   2. the floor — the letter body, a background clipped to the glyphs: stone-coloured, a shade
+      brighter on the light's side, with the stone's bedding carried faintly into it.
+   Browsers snap drop-shadow offsets to whole px by flooring (+0.99px becomes 0, -0.99px
+   becomes -1), which makes a sub-pixel cut lopsided and deletes the shaded wall whenever the
+   light crosses over. Every offset is rounded to the nearest px instead, and no wall is ever
+   shallower than 1px, so the cut survives at every size and in every light. */
+.cut{
+  color:var(--floor);
+  --wd:max(1px, 0.017em);  --wd2:max(1px, 0.034em);
+  --wl:max(1px, 0.019em);  --wl2:max(1px, 0.036em);  --wlb:max(1px, 0.024em);
+  --sx:calc(var(--lx) * -1);
+  --sy:calc(var(--ly) * -1);
+  filter:
+    drop-shadow(round(nearest, calc(var(--sx) * var(--wd)), 1px)  round(nearest, calc(var(--sy) * var(--wd)), 1px)  0 var(--wall-shade))
+    drop-shadow(round(nearest, calc(var(--lx) * var(--wl)), 1px)  round(nearest, calc(var(--ly) * var(--wl)), 1px)  0 var(--wall-lit))
+    drop-shadow(round(nearest, calc(var(--sx) * var(--wd2)), 1px) round(nearest, calc(var(--sy) * var(--wd2)), 1px) 0 var(--wall-shade-veil))
+    drop-shadow(round(nearest, calc(var(--lx) * var(--wl2)), 1px) round(nearest, calc(var(--ly) * var(--wl2)), 1px) var(--wlb) var(--wall-lit-veil));
+}
+.cut .deep{ color:var(--floor-deep); }
+.cut .dot{ color:var(--floor-drill); }
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .cut, .cut .deep, .cut .dot{
+    color:transparent;
+    -webkit-background-clip:text;
+    background-clip:text;
+    background-repeat:repeat;
+  }
+  .cut{
+    background-color:var(--floor);
+    background-image:
+      repeating-linear-gradient(92deg,
+        var(--grain-pore) 0px, var(--grain-pore) 1px, transparent 1px, transparent 7px),
+      repeating-linear-gradient(4deg,
+        var(--grain-bed) 0px, var(--grain-bed) 3px, transparent 3px, transparent 19px),
+      repeating-linear-gradient(6.5deg,
+        var(--grain-bed) 0px, var(--grain-bed) 2px, transparent 2px, transparent 47px),
+      linear-gradient(calc(90deg + atan2(var(--ly), var(--lx))), var(--floor-hi), var(--floor-lo));
+  }
+  .cut .deep{
+    background-color:var(--floor-deep);
+    background-image:
+      repeating-linear-gradient(92deg,
+        var(--grain-pore) 0px, var(--grain-pore) 1px, transparent 1px, transparent 7px),
+      repeating-linear-gradient(4deg,
+        var(--grain-bed) 0px, var(--grain-bed) 3px, transparent 3px, transparent 19px);
+  }
+  .cut .dot{
+    background-color:var(--floor-drill);
+    background-image:none;
+  }
+}
+
+/* the same letters cut one step deeper: wider walls, and a floor that sees less light */
+.cut-deep{
+  --floor:var(--floor-deep);
+  --floor-hi:#565042;
+  --floor-lo:#4E483B;
+}
+.cut.cut-deep{
+  /* the chain accumulates: hard wall + half-shade = ~0.065em of shaded wall, the deepest on the page */
+  --wd:max(1px, 0.024em);  --wd2:max(1px, 0.032em);
+  --wl:max(1px, 0.022em);  --wl2:max(1px, 0.040em);  --wlb:max(1px, 0.030em);
+}
+
+/* ---------- architrave: set, not carved ---------- */
+.architrave{
+  position:fixed;
+  top:0; left:0; right:0;
+  z-index:10;
+  margin:0;
+  padding:var(--s3) var(--s2) 14px calc(var(--s2) + 0.30em);
+  text-align:center;
+  font-family:var(--mono);
+  font-variation-settings:"wdth" 112.5, "wght" 400;
+  font-size:9.5px;
+  line-height:1.5;
+  letter-spacing:0.30em;
+  color:var(--ink);
+  background:linear-gradient(180deg,
+    rgba(239,233,220,.94) 0%, rgba(239,233,220,.90) 62%, rgba(239,233,220,0) 100%);
+  -webkit-backdrop-filter:blur(3px);
+  backdrop-filter:blur(3px);
+  pointer-events:none;
+}
+.architrave a{
+  pointer-events:auto;
+  color:var(--ink);
+  text-decoration:none;
+}
+.architrave a:hover, .architrave a:focus-visible{ text-decoration:underline; text-underline-offset:4px; }
+
+.skip{
+  position:absolute; left:-9999px;
+  font-family:var(--text);
+}
+.skip:focus{
+  left:var(--s2); top:var(--s2); z-index:20;
+  padding:8px 14px; background:var(--tv-0); color:var(--bronze);
+  outline:1px solid var(--bronze);
+}
+
+/* ---------- the hairline ---------- */
+.rule{
+  width:220px;
+  max-width:62%;
+  height:1px;
+  margin:var(--s4) auto;
+  background:var(--ink-soft);
+  opacity:.5;
+  box-shadow:calc(var(--lx) * 1px) calc(var(--ly) * 1px) 0 var(--wall-lit);
+}
+.rule-tight{ margin:var(--s3) auto; width:120px; }
+
+a{ color:var(--bronze); }
+a:hover,a:focus-visible{ opacity:.7; }
+a:focus-visible{ outline:1px solid var(--bronze); outline-offset:6px; }
+button:focus-visible{ outline:1px solid var(--bronze); outline-offset:4px; }
+
+.visually-hidden{
+  position:absolute !important;
+  width:1px; height:1px;
+  margin:-1px; padding:0; border:0;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  clip-path:inset(50%);
+  white-space:nowrap;
+}
+
+@media (max-width:760px){
+  body{ font-size:17px; line-height:29px; }
+  .architrave{
+    font-size:8px;
+    letter-spacing:0.18em;
+    padding:var(--s2) var(--s2) 10px calc(var(--s2) + 0.18em);
+    text-wrap:balance;
+  }
+}
+@media (forced-colors: active){
+  .cut, .cut .deep, .cut .dot{ filter:none; color:CanvasText; background:none; }
+}
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior:auto; }
+}

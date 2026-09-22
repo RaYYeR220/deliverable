@@ -1,0 +1,3 @@
+# build artefacts the repository root does not already cover
+*.tsbuildinfo
+next-env.d.ts

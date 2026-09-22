@@ -1,0 +1,464 @@
+/* The landing surface. Every selector is held under .landing so the instrument, which
+   shares the stone but not the monumental measure, never inherits these. */
+
+/* ---------- shared measure ---------- */
+/* the measure is the text column; the margins are added outside it, so the
+   stone around the inscription stays enormous at every width */
+.landing .col{
+  max-width:calc(66ch + var(--s6) * 2);
+  margin:0 auto;
+  padding:0 var(--s6);
+}
+.landing .col-wide{ max-width:calc(80ch + var(--s6) * 2); }
+
+.landing section{ padding:var(--s6) 0; }
+.landing #hero{ padding:0; }
+
+/* ---------- heads ---------- */
+.landing .sect-mark{
+  margin:0 0 var(--s4) 0;
+  text-align:center;
+  font-family:var(--mono);
+  font-variation-settings:"wdth" 75, "wght" 400;
+  font-size:9.5px;
+  letter-spacing:0.34em;
+  color:var(--ink);
+  padding-left:0.34em;
+}
+
+/* h2 is carved (see .cut) */
+.landing h2{
+  margin:0 0 var(--s4) 0;
+  text-align:center;
+  text-wrap:balance;
+  font-family:var(--display);
+  font-weight:600;
+  font-size:clamp(1.4rem,2.8vw,2.35rem);
+  line-height:1.44;
+  letter-spacing:0.06em;
+}
+
+/* h3 is reading size: set, not carved */
+.landing h3{
+  margin:0 0 var(--s2) 0;
+  font-family:var(--display);
+  font-weight:600;
+  font-size:17px;
+  line-height:1.5;
+  letter-spacing:0.12em;
+  color:var(--ink);
+}
+
+.landing p{ margin:0 0 var(--s3) 0; }
+.landing p:last-child{ margin-bottom:0; }
+
+.landing .lede{
+  font-size:21px;
+  line-height:34px;
+  color:var(--ink);
+}
+.landing .body{ color:var(--ink); }
+
+.landing code, .landing .mono{
+  font-family:var(--mono);
+  font-variation-settings:"wdth" 87.5, "wght" 400;
+  font-size:0.80em;
+  letter-spacing:0.02em;
+  overflow-wrap:anywhere;
+  color:var(--ink);
+}
+
+/* ---------- 1 · hero ---------- */
+.landing .slab{
+  min-height:100vh;
+  min-height:100svh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:18vh var(--s6);
+}
+.landing .inscription{
+  margin:0;
+  max-width:100%;
+  font-family:var(--display);
+  font-weight:600;
+  font-size:clamp(1.85rem,4.05vw,3.9rem);
+  line-height:1.40;
+  letter-spacing:0.045em;
+}
+.landing .inscription .line{ display:block; text-wrap:balance; }
+.landing .inscription .deep{
+  /* the same letters cut one step deeper: wider walls, and a floor that sees less light */
+  filter:
+    drop-shadow(round(nearest, calc(var(--lx) * -0.016em), 1px) round(nearest, calc(var(--ly) * -0.016em), 1px) 0 var(--wall-shade))
+    drop-shadow(round(nearest, calc(var(--lx) *  0.014em), 1px) round(nearest, calc(var(--ly) *  0.014em), 1px) 0 var(--wall-lit));
+}
+/* .dot — interpunct: a drilled point, always shallower than the letters (floor: --floor-drill) */
+.landing .sub{
+  margin:0;
+  max-width:47ch;
+  font-style:italic;
+  font-size:19px;
+  line-height:31px;
+  color:var(--ink);
+}
+.landing .cta{
+  margin-top:var(--s4);
+  display:inline-block;
+  font-variant:small-caps;
+  font-weight:600;
+  font-size:16px;
+  letter-spacing:0.15em;
+  color:var(--bronze);
+  text-decoration:underline;
+  text-decoration-color:var(--bronze);
+  text-decoration-thickness:1px;
+  text-underline-offset:7px;
+  transition:opacity .3s ease;
+}
+
+/* ---------- 2 · the four states ---------- */
+.landing .roll{
+  list-style:none;
+  margin:var(--s5) 0 0 0;
+  padding:0;
+}
+.landing .roll li{
+  padding:var(--s3) 0;
+  border-top:1px solid rgba(87,74,53,.26);
+  display:grid;
+  grid-template-columns:1fr;
+  gap:6px;
+}
+.landing .roll li:last-child{ border-bottom:1px solid rgba(87,74,53,.26); }
+.landing .roll .state{
+  font-family:var(--display);
+  font-weight:600;
+  font-size:17px;
+  letter-spacing:0.16em;
+  color:var(--ink);
+}
+.landing .roll .gloss{
+  font-style:italic;
+  color:var(--ink);
+}
+
+.landing .ratio{
+  margin:var(--s5) 0 0 0;
+  text-align:center;
+}
+/* carved (see .cut) */
+.landing .ratio .fig{
+  display:block;
+  font-family:var(--display);
+  font-weight:600;
+  font-size:clamp(2.2rem,5.4vw,4.4rem);
+  line-height:1.16;
+  letter-spacing:0.03em;
+}
+.landing .ratio .cap{
+  display:block;
+  margin-top:var(--s3);
+  font-style:italic;
+  font-size:18px;
+  line-height:28px;
+  color:var(--ink);
+}
+
+/* ---------- 3 · the measurement ---------- */
+.landing .record{
+  margin:var(--s5) 0 0 0;
+  padding-top:var(--s4);
+  border-top:1px solid rgba(87,74,53,.34);
+}
+.landing .record + .record{ margin-top:var(--s6); }
+.landing .record-head{
+  margin:0 0 var(--s1) 0;
+  font-family:var(--mono);
+  font-variation-settings:"wdth" 100, "wght" 500;
+  font-size:11px;
+  line-height:1.7;
+  letter-spacing:0.22em;
+  color:var(--ink);
+  overflow-wrap:anywhere;
+}
+.landing .record-sub{
+  margin:0 0 var(--s3) 0;
+  font-style:italic;
+  color:var(--ink);
+}
+
+.landing .ledger{
+  margin:0 0 var(--s3) 0;
+  display:grid;
+  grid-template-columns:1fr auto;
+  column-gap:0;
+  row-gap:0;
+  align-items:stretch;
+}
+.landing .ledger dt{
+  padding:13px var(--s3) 13px 0;
+  font-family:var(--display);
+  font-weight:500;
+  font-size:14px;
+  line-height:20px;
+  letter-spacing:0.14em;
+  color:var(--ink);
+  border-bottom:1px solid rgba(87,74,53,.16);
+}
+.landing .ledger dd{
+  margin:0;
+  padding:13px 0 13px var(--s3);
+  text-align:right;
+  font-family:var(--mono);
+  font-variation-settings:"wdth" 87.5, "wght" 500;
+  font-size:14px;
+  line-height:20px;
+  letter-spacing:0.01em;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+  border-bottom:1px solid rgba(87,74,53,.16);
+}
+.landing .ledger dd.held{
+  /* the number that did not move is set heaviest: it is the finding */
+  font-variation-settings:"wdth" 100, "wght" 700;
+  letter-spacing:0.04em;
+}
+.landing .note{
+  margin:0;
+  font-family:var(--mono);
+  font-variation-settings:"wdth" 75, "wght" 400;
+  font-size:10px;
+  line-height:1.9;
+  letter-spacing:0.16em;
+  color:var(--ink);
+  overflow-wrap:anywhere;
+}
+
+/* carved at display size (see .cut); set as text on small screens */
+.landing .verdict{
+  margin:var(--s4) 0 0 0;
+  text-align:center;
+  font-family:var(--display);
+  font-weight:600;
+  font-size:clamp(1.05rem,2vw,1.4rem);
+  line-height:1.6;
+  letter-spacing:0.10em;
+  text-wrap:balance;
+}
+
+.landing .marked{
+  margin:var(--s6) 0 0 0;
+  text-align:center;
+}
+/* carved (see .cut) */
+.landing .marked .fig{
+  display:block;
+  font-family:var(--display);
+  font-weight:600;
+  font-size:clamp(1.9rem,4.6vw,3.6rem);
+  line-height:1.2;
+  letter-spacing:0.04em;
+}
+.landing .marked .cap{
+  display:block;
+  margin-top:var(--s2);
+  font-style:italic;
+  color:var(--ink);
+}
+
+/* ---------- 4 · the two mechanisms ---------- */
+.landing .mech{
+  margin:var(--s5) 0 0 0;
+  padding-top:var(--s4);
+  border-top:1px solid rgba(87,74,53,.34);
+}
+.landing .mech + .mech{ margin-top:var(--s6); }
+.landing .numeral{
+  display:block;
+  margin:0 0 var(--s2) 0;
+  font-family:var(--display);
+  font-weight:500;
+  font-size:13px;
+  letter-spacing:0.34em;
+  color:var(--bronze);
+}
+.landing .formula{
+  margin:var(--s4) 0;
+  padding:0;
+  text-align:center;
+  font-family:var(--mono);
+  font-variation-settings:"wdth" 87.5, "wght" 600;
+  font-size:clamp(13px,2.1vw,19px);
+  line-height:1.9;
+  letter-spacing:0.05em;
+  color:var(--ink);
+  overflow-wrap:anywhere;
+}
+.landing .formula-cap{
+  margin:calc(var(--s3) * -1) 0 0 0;
+  text-align:center;
+  font-style:italic;
+  color:var(--ink);
+}
+.landing .events{
+  list-style:none;
+  margin:var(--s3) 0 0 0;
+  padding:0;
+}
+.landing .events li{
+  display:grid;
+  grid-template-columns:1fr auto;
+  column-gap:var(--s3);
+  align-items:baseline;
+  padding:12px 0;
+  border-bottom:1px solid rgba(87,74,53,.16);
+}
+.landing .events .val{ text-align:right; }
+.landing .events li:first-child{ border-top:1px solid rgba(87,74,53,.16); }
+.landing .events .ev{
+  font-family:var(--display);
+  font-weight:500;
+  font-size:14px;
+  letter-spacing:0.13em;
+  color:var(--ink);
+}
+.landing .events .val{
+  font-family:var(--mono);
+  font-variation-settings:"wdth" 87.5, "wght" 500;
+  font-size:13px;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+}
+
+/* ---------- 5 · refusal ---------- */
+.landing .refused-word{
+  display:block;
+  margin:0 0 var(--s3) 0;
+  text-align:center;
+  font-family:var(--display);
+  font-weight:700;
+  font-size:clamp(2rem,5vw,4rem);
+  line-height:1.2;
+  /* No pigment is added. The word is cut deeper and tracked wider than
+     anything else on the page, and that is the whole of the notation. */
+  letter-spacing:0.22em;
+  padding-left:0.22em;
+}
+.landing .codes{
+  list-style:none;
+  margin:var(--s5) 0 0 0;
+  padding:0;
+  counter-reset:code;
+}
+.landing .codes li{
+  display:grid;
+  grid-template-columns:3.2rem 1fr;
+  column-gap:var(--s3);
+  row-gap:4px;
+  padding:var(--s3) 0;
+  border-top:1px solid rgba(87,74,53,.22);
+}
+.landing .codes li:last-child{ border-bottom:1px solid rgba(87,74,53,.22); }
+.landing .codes .num{
+  font-family:var(--display);
+  font-weight:500;
+  font-size:13px;
+  line-height:1.9;
+  letter-spacing:0.14em;
+  color:var(--bronze);
+}
+.landing .codes .name{
+  font-family:var(--display);
+  font-weight:600;
+  font-size:16px;
+  line-height:1.5;
+  letter-spacing:0.15em;
+  color:var(--ink);
+}
+.landing .codes .why{
+  grid-column:2;
+  font-style:italic;
+  color:var(--ink);
+}
+
+/* ---------- 6 · footer ---------- */
+.landing footer{
+  padding:var(--s6) 0 var(--s5) 0;
+  border-top:1px solid rgba(87,74,53,.30);
+  margin-top:0;
+}
+.landing .colophon{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:var(--s3) var(--s4);
+  margin:0 0 var(--s5) 0;
+  padding:0;
+  list-style:none;
+}
+.landing .colophon a{
+  font-variant:small-caps;
+  font-weight:600;
+  font-size:16px;
+  letter-spacing:0.14em;
+  text-decoration:underline;
+  text-decoration-thickness:1px;
+  text-underline-offset:6px;
+}
+.landing .stamp{
+  margin:0;
+  text-align:center;
+  font-family:var(--mono);
+  font-variation-settings:"wdth" 75, "wght" 400;
+  font-size:9px;
+  line-height:2;
+  letter-spacing:0.22em;
+  color:var(--ink);
+  padding-left:0.22em;
+  overflow-wrap:anywhere;
+}
+
+/* ---------- narrower ---------- */
+@media (max-width:1100px){
+  .landing .col{ max-width:calc(66ch + var(--s5) * 2); padding:0 var(--s5); }
+  .landing .col-wide{ max-width:calc(78ch + var(--s5) * 2); }
+}
+@media (max-width:760px){
+  .landing .col{ padding:0 var(--s2); max-width:none; }
+  .landing section{ padding:var(--s5) 0; }
+  .landing .slab{ padding:14vh var(--s2) 12vh; }
+  .landing .inscription{ letter-spacing:0.03em; line-height:1.38; }
+  .landing .sub{ font-size:17px; line-height:28px; max-width:34ch; }
+  .landing .cta{ margin-top:var(--s3); }
+  .landing .lede{ font-size:19px; line-height:31px; }
+  .landing .sect-mark{ margin-bottom:var(--s3); font-size:8px; letter-spacing:0.22em; }
+  .landing h2{ margin-bottom:var(--s3); letter-spacing:0.04em; }
+  /* at 17px the verdict is reading size: set it, do not cut it */
+  .landing .verdict.cut{ filter:none; background:none; color:var(--ink); }
+  .landing .roll{ margin-top:var(--s4); }
+  .landing .ratio{ margin-top:var(--s4); }
+  .landing .record{ margin-top:var(--s4); padding-top:var(--s3); }
+  .landing .record + .record{ margin-top:var(--s5); }
+  .landing .record-head{ font-size:10px; letter-spacing:0.14em; }
+  .landing .ledger dt{ padding-right:var(--s2); }
+  .landing .ledger dd{ padding-left:var(--s2); }
+  .landing .ledger dt{ font-size:13px; letter-spacing:0.10em; }
+  .landing .ledger dd{ font-size:13px; }
+  .landing .marked{ margin-top:var(--s5); }
+  .landing .mech{ margin-top:var(--s4); padding-top:var(--s3); }
+  .landing .mech + .mech{ margin-top:var(--s5); }
+  .landing .codes{ margin-top:var(--s4); }
+  .landing .codes li{ grid-template-columns:2.4rem 1fr; column-gap:var(--s2); }
+  .landing .codes .name{ font-size:15px; letter-spacing:0.10em; }
+  .landing .events .ev{ font-size:13px; letter-spacing:0.09em; }
+  .landing .events .val{ font-size:12px; }
+  .landing footer{ padding:var(--s5) 0 var(--s4) 0; margin-top:var(--s5); }
+  .landing .colophon{ gap:var(--s2) var(--s3); margin-bottom:var(--s4); }
+  .landing .stamp{ font-size:8px; letter-spacing:0.14em; }
+}
+@media (prefers-reduced-motion: reduce){
+  .landing .cta{ transition:none; }
+}

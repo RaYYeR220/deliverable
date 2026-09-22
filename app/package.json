@@ -1,0 +1,35 @@
+{
+  "name": "@stocklana/app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Landing page and instrument for the Deliverable program.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node scripts/ensure-sdk.mjs && next dev",
+    "build": "node scripts/ensure-sdk.mjs && next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "capture:replay": "node scripts/capture-replay.mjs"
+  },
+  "dependencies": {
+    "@stocklana/sdk": "link:../sdk",
+    "@wallet-standard/app": "^1.1.0",
+    "@wallet-standard/base": "^1.1.0",
+    "@wallet-standard/features": "^1.1.0",
+    "@solana/wallet-standard-features": "^1.5.0",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5.9.3"
+  }
+}

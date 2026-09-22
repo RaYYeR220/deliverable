@@ -1,0 +1,23 @@
+{
+  "capturedAtSlot": 449352952,
+  "capturedAtUnix": 1790073200,
+  "capturedAtIso": "2026-09-22T10:33:20.000Z",
+  "accounts": [
+    {
+      "file": "nvdax_mint.bin",
+      "pubkey": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+      "what": "NVDAx Token-2022 mint",
+      "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+      "bytes": 679,
+      "sha256": "2b34e6902b29a8c68dba81acfc74bb91b98dd003b809b4d9d83d2d2b62e6cc94"
+    },
+    {
+      "file": "scope_token_metadatas.bin",
+      "pubkey": "3wHxoHowen78mskgqKQmaYVQV8Mqd5PUFXja2xcfviSV",
+      "what": "Scope TokenMetadatas (slot labels)",
+      "owner": "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+      "bytes": 86024,
+      "sha256": "27054c48c0d0f62ddcf02bdcb899417d3e536642d760774756a081bcef0a4904"
+    }
+  ]
+}
