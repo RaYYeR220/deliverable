@@ -66,6 +66,12 @@
       "signature": "3oVqe7QsoC6jLAHSzfXcr66nMgzSEaUrgWjvsEpxktSjMUxjA9BVe7ZUKrqz6AUpUT4TNb6cjJ2etWMeTFA7AukR",
       "slot": 502518364,
       "blockTime": 1790095703
+    },
+    {
+      "label": "probe(closed): probe_security",
+      "signature": "3CiUJerrvQ4BmWmPXubrerXHtcpv1qw1xWcXrwrs5vFoz6GWp2xZcRzwLXCfGN5W39QC1gs1qCXs2J6kcwHPCHHC",
+      "slot": 502588330,
+      "blockTime": 1790107298
     }
   ],
   "registry": "DiK3Y7ZCK7n1ftXXQ6fboChc6MiiVhJdTu6GxCJf36Ls",
@@ -126,6 +132,22 @@
       "refusalsAfter": 1,
       "lastRefusalCode": 9,
       "lastRefusalTs": "1790095703"
+    },
+    {
+      "mode": "closed",
+      "code": 1,
+      "signatures": [
+        {
+          "label": "probe_security",
+          "signature": "3CiUJerrvQ4BmWmPXubrerXHtcpv1qw1xWcXrwrs5vFoz6GWp2xZcRzwLXCfGN5W39QC1gs1qCXs2J6kcwHPCHHC"
+        }
+      ],
+      "oracleSlot": "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9",
+      "session": "Closed",
+      "chainClock": 1790107297,
+      "refusalsAfter": 2,
+      "lastRefusalCode": 1,
+      "lastRefusalTs": "1790107298"
     }
   ]
 }

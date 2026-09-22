@@ -209,12 +209,18 @@ mint from the `AAPLd` quote mint `8FBsKWYu…vJDm` that the series market sectio
 | probe | chain time (UTC) | session | Pyth update the gate read | transactions | verdict |
 |---|---|---|---|---|---|
 | 1 | 2026-09-22 16:48:23 (12:48 ET) | Regular | `Equity.US.AAPL/USD` 342.43997 ± 0.02997 (0.875 bps), `publish_time` 16:48:21, Full verification, [`9YWnGvx5…i6N9`](https://explorer.solana.com/address/9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9?cluster=devnet) | Wormhole `VerifyEncodedVaaV1` [`5tb3KoaZ…VMjQ`](https://explorer.solana.com/tx/5tb3KoaZoNLNKDM6YKaAWTwpwDFjFk3EmkGtuyyAeGM7vinpRe3Jkbe9kX3kydhhyT5WcSjGyt6WiheRWxQjVMjQ?cluster=devnet) (encoded VAA [`HgDKQvNG…KPZM`](https://explorer.solana.com/address/HgDKQvNGjS7NDTw7yiyJz4eSMS1LC2dkJ5Zex4utKPZM?cluster=devnet)); receiver `PostUpdate` + `sync_security` + `probe_security` [`3oVqe7Qs…AukR`](https://explorer.solana.com/tx/3oVqe7QsoC6jLAHSzfXcr66nMgzSEaUrgWjvsEpxktSjMUxjA9BVe7ZUKrqz6AUpUT4TNb6cjJ2etWMeTFA7AukR?cluster=devnet) | **9 `SingleSource`** |
-| 2 | not yet sent: it has to go out after 20:00 UTC | Closed | none: the calendar decides before any oracle is read | `cd scripts/devnet && pnpm tsx probe.ts --closed` | expected 1 `MarketClosed`, not yet observed |
+| 2 | 2026-09-22 20:01:37 (16:01 ET) | Closed | none. The oracle account was passed in and never read | `probe_security` [`3CiUJerr…PCHHC`](https://explorer.solana.com/tx/3CiUJerrvQ4BmWmPXubrerXHtcpv1qw1xWcXrwrs5vFoz6GWp2xZcRzwLXCfGN5W39QC1gs1qCXs2J6kcwHPCHHC?cluster=devnet) | **1 `MarketClosed`** |
 
 In probe 1, the gate ran after the update was 2 s old, within the 60 s bound, and its confidence
 band was 0.875 bps, within the 100 bps bound. Both checks passed on the real update, and the gate
 declined because one uncorroborated number is not a price. The transaction log reads
 `Program log: refused code=9 at=1790095703`, and the `Refused` event carries code 9.
+
+Probe 2 went out ninety seconds after the closing bell, into the same security, with the same
+oracle account in the instruction. The program never read it: the committed calendar decided the
+session first, which is the ordering the README claims and `gate::refuse_if_closed` implements.
+The log reads `Program log: refused code=1 at=1790107298`, and `SecurityState.refusals` went from
+1 to 2. Two different refusal codes, from two different causes, on the same deployed program.
 
 The SecurityState read back after probe 1 (`cd scripts/devnet && pnpm tsx read.ts`):
 
