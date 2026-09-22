@@ -89,7 +89,7 @@ session     Regular  (US equity calendar, 12 exceptions, the program's own rule)
 cargo test --manifest-path programs/deliverable/Cargo.toml
 ```
 
-You should see `test result: ok. 141 passed; 0 failed; 0 ignored`. On our machine a warm rebuild
+You should see `test result: ok. 142 passed; 0 failed; 0 ignored`. On our machine a warm rebuild
 finished in about 15 seconds. A cold build compiles the dependency tree first and takes longer. The
 tests run under LiteSVM against real mainnet account dumps (hashes are in [PROOF.md](PROOF.md)).
 Three are worth reading:

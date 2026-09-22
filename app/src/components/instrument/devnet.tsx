@@ -70,7 +70,7 @@ export function DevnetTablet({ record, state }: { record: DevnetRecord; state: S
 
       <p className="i-foot">
         Live refuses on devnet because devnet has no second, independently sourced price for AAPL: one uncorroborated
-        number is not treated as a price. The path where every check passes is proven elsewhere &mdash; by the 108
+        number is not treated as a price. The path where every check passes is proven elsewhere &mdash; by the 142
         LiteSVM tests, which run the compiled program against real mainnet account dumps, and by Preview, which runs the
         same gate on live mainnet accounts for AAPLx and NVDAx.
       </p>
