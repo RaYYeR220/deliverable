@@ -1,0 +1,2848 @@
+{
+  "address": "DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa",
+  "metadata": {
+    "name": "deliverable",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Options on tokenized equities that survive corporate actions and the closing bell"
+  },
+  "instructions": [
+    {
+      "name": "acknowledge_adjustment",
+      "discriminator": [
+        226,
+        191,
+        35,
+        5,
+        214,
+        63,
+        48,
+        111
+      ],
+      "accounts": [
+        {
+          "name": "series",
+          "writable": true
+        },
+        {
+          "name": "underlying_mint"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "append_calendar_entries",
+      "discriminator": [
+        245,
+        140,
+        58,
+        190,
+        25,
+        158,
+        14,
+        92
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "calendar"
+          ]
+        },
+        {
+          "name": "calendar",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  108,
+                  101,
+                  110,
+                  100,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "calendar.id",
+                "account": "MarketCalendar"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "entries",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "CalendarEntry"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "attest_halt",
+      "discriminator": [
+        254,
+        20,
+        3,
+        186,
+        200,
+        47,
+        95,
+        230
+      ],
+      "accounts": [
+        {
+          "name": "attestor",
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "security",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  117,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "security.underlying_mint",
+                "account": "SecurityState"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "halted",
+          "type": "bool"
+        },
+        {
+          "name": "since_ts",
+          "type": "i64"
+        },
+        {
+          "name": "source",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "claim_premium",
+      "discriminator": [
+        225,
+        124,
+        12,
+        107,
+        24,
+        154,
+        37,
+        100
+      ],
+      "accounts": [
+        {
+          "name": "writer",
+          "signer": true
+        },
+        {
+          "name": "series",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  114,
+                  105,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              },
+              {
+                "kind": "account",
+                "path": "writer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "underlying_mint"
+        },
+        {
+          "name": "premium_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  101,
+                  109,
+                  105,
+                  117,
+                  109
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              }
+            ]
+          }
+        },
+        {
+          "name": "writer_underlying",
+          "writable": true
+        },
+        {
+          "name": "underlying_token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_series",
+      "discriminator": [
+        181,
+        9,
+        52,
+        120,
+        197,
+        221,
+        42,
+        142
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "security",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  117,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "underlying_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "calendar",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  108,
+                  101,
+                  110,
+                  100,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "calendar.id",
+                "account": "MarketCalendar"
+              }
+            ]
+          }
+        },
+        {
+          "name": "underlying_mint"
+        },
+        {
+          "name": "quote_mint",
+          "docs": [
+            "What exercise is paid in. Not hardcoded: the quote asset is a listing",
+            "decision, and a venue that bakes one in cannot list against anything",
+            "else without a redeploy."
+          ]
+        },
+        {
+          "name": "series",
+          "writable": true
+        },
+        {
+          "name": "option_mint",
+          "docs": [
+            "One option token is one contract, so it has no decimals to round."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  112,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_vault",
+          "docs": [
+            "Anchor sizes this from the mint's own required account extensions, which",
+            "is how the 175-byte xStock token account gets allocated correctly",
+            "without the program knowing that number."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              }
+            ]
+          }
+        },
+        {
+          "name": "premium_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  101,
+                  109,
+                  105,
+                  117,
+                  109
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  111,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              }
+            ]
+          }
+        },
+        {
+          "name": "underlying_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "expiry_ts",
+          "type": "i64"
+        },
+        {
+          "name": "strike0",
+          "type": "u64"
+        },
+        {
+          "name": "kind",
+          "type": {
+            "defined": {
+              "name": "OptionKind"
+            }
+          }
+        },
+        {
+          "name": "contract_raw_size",
+          "type": "u64"
+        },
+        {
+          "name": "settlement_window_minutes",
+          "type": "u16"
+        },
+        {
+          "name": "adjust_on_corporate_action",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "exercise",
+      "discriminator": [
+        144,
+        79,
+        103,
+        64,
+        241,
+        78,
+        80,
+        174
+      ],
+      "accounts": [
+        {
+          "name": "holder",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "security",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  117,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "underlying_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "calendar",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  108,
+                  101,
+                  110,
+                  100,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "calendar.id",
+                "account": "MarketCalendar"
+              }
+            ]
+          }
+        },
+        {
+          "name": "series",
+          "writable": true
+        },
+        {
+          "name": "underlying_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "option_mint",
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  111,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              }
+            ]
+          }
+        },
+        {
+          "name": "holder_option",
+          "writable": true
+        },
+        {
+          "name": "holder_quote",
+          "writable": true
+        },
+        {
+          "name": "holder_underlying",
+          "writable": true
+        },
+        {
+          "name": "primary_oracle"
+        },
+        {
+          "name": "secondary_oracle"
+        },
+        {
+          "name": "underlying_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "contracts",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "init_calendar",
+      "discriminator": [
+        178,
+        150,
+        90,
+        163,
+        154,
+        72,
+        222,
+        102
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "registry"
+          ]
+        },
+        {
+          "name": "registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "calendar",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  108,
+                  101,
+                  110,
+                  100,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "id",
+          "type": "u16"
+        },
+        {
+          "name": "regular_open_minute",
+          "type": "u16"
+        },
+        {
+          "name": "regular_close_minute",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "init_registry",
+      "discriminator": [
+        131,
+        22,
+        4,
+        103,
+        24,
+        94,
+        163,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "attestor",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "open_position",
+      "discriminator": [
+        135,
+        128,
+        47,
+        77,
+        15,
+        152,
+        240,
+        49
+      ],
+      "accounts": [
+        {
+          "name": "writer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "series"
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  114,
+                  105,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              },
+              {
+                "kind": "account",
+                "path": "writer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "probe_security",
+      "docs": [
+        "Ask the gate for its verdict and record it. Succeeds either way, which",
+        "is the only way a refusal can be counted — every other caller reverts."
+      ],
+      "discriminator": [
+        161,
+        26,
+        227,
+        99,
+        27,
+        204,
+        146,
+        209
+      ],
+      "accounts": [
+        {
+          "name": "security",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  117,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "underlying_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "calendar",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  108,
+                  101,
+                  110,
+                  100,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "calendar.id",
+                "account": "MarketCalendar"
+              }
+            ]
+          }
+        },
+        {
+          "name": "underlying_mint"
+        },
+        {
+          "name": "primary_oracle"
+        },
+        {
+          "name": "secondary_oracle"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "probe_session",
+      "docs": [
+        "Session resolution for a calendar, as a transaction anyone can send. The",
+        "answer is free to compute off-chain from the same account, but having it",
+        "on-chain means a refusal can be pointed at rather than argued about."
+      ],
+      "discriminator": [
+        31,
+        120,
+        167,
+        116,
+        205,
+        156,
+        135,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "calendar"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "register_security",
+      "discriminator": [
+        202,
+        35,
+        140,
+        58,
+        166,
+        213,
+        77,
+        169
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "registry"
+          ]
+        },
+        {
+          "name": "registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "underlying_mint",
+          "docs": [
+            "The security *is* its mint. One security per mint, forever."
+          ]
+        },
+        {
+          "name": "calendar",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  108,
+                  101,
+                  110,
+                  100,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "calendar.id",
+                "account": "MarketCalendar"
+              }
+            ]
+          }
+        },
+        {
+          "name": "security",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  117,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "underlying_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "symbol",
+          "type": {
+            "array": [
+              "u8",
+              12
+            ]
+          }
+        },
+        {
+          "name": "sources",
+          "type": {
+            "defined": {
+              "name": "OracleBinding"
+            }
+          }
+        },
+        {
+          "name": "max_price_age",
+          "type": "u32"
+        },
+        {
+          "name": "max_conf_bps",
+          "type": "u32"
+        },
+        {
+          "name": "max_divergence_bps",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "set_registry_paused",
+      "discriminator": [
+        209,
+        16,
+        113,
+        6,
+        55,
+        212,
+        32,
+        157
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "registry"
+          ]
+        },
+        {
+          "name": "registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "settle_expired",
+      "discriminator": [
+        187,
+        68,
+        57,
+        40,
+        121,
+        72,
+        73,
+        161
+      ],
+      "accounts": [
+        {
+          "name": "writer",
+          "signer": true
+        },
+        {
+          "name": "calendar",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  108,
+                  101,
+                  110,
+                  100,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "calendar.id",
+                "account": "MarketCalendar"
+              }
+            ]
+          }
+        },
+        {
+          "name": "series",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  114,
+                  105,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              },
+              {
+                "kind": "account",
+                "path": "writer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "underlying_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true
+        },
+        {
+          "name": "quote_vault",
+          "writable": true
+        },
+        {
+          "name": "writer_underlying",
+          "writable": true
+        },
+        {
+          "name": "writer_quote",
+          "writable": true
+        },
+        {
+          "name": "underlying_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "sync_security",
+      "discriminator": [
+        45,
+        127,
+        218,
+        31,
+        124,
+        175,
+        28,
+        215
+      ],
+      "accounts": [
+        {
+          "name": "security",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  117,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "underlying_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "underlying_mint"
+        },
+        {
+          "name": "primary_oracle",
+          "docs": [
+            "this security was registered with; an account from the wrong program is",
+            "rejected there."
+          ]
+        },
+        {
+          "name": "secondary_oracle",
+          "docs": [
+            "with a single declared source — it is never read in that case, and the",
+            "gate refuses regardless."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "write",
+      "discriminator": [
+        235,
+        116,
+        91,
+        200,
+        206,
+        170,
+        144,
+        120
+      ],
+      "accounts": [
+        {
+          "name": "writer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "security",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  117,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "underlying_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "calendar",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  108,
+                  101,
+                  110,
+                  100,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "calendar.id",
+                "account": "MarketCalendar"
+              }
+            ]
+          }
+        },
+        {
+          "name": "series",
+          "writable": true
+        },
+        {
+          "name": "underlying_mint"
+        },
+        {
+          "name": "option_mint",
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true
+        },
+        {
+          "name": "writer_underlying",
+          "writable": true
+        },
+        {
+          "name": "writer_option",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  114,
+                  105,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "series"
+              },
+              {
+                "kind": "account",
+                "path": "writer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "primary_oracle"
+        },
+        {
+          "name": "secondary_oracle"
+        },
+        {
+          "name": "underlying_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "contracts",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "MarketCalendar",
+      "discriminator": [
+        3,
+        21,
+        133,
+        9,
+        156,
+        12,
+        91,
+        73
+      ]
+    },
+    {
+      "name": "OptionSeries",
+      "discriminator": [
+        133,
+        216,
+        220,
+        240,
+        189,
+        120,
+        149,
+        116
+      ]
+    },
+    {
+      "name": "Registry",
+      "discriminator": [
+        47,
+        174,
+        110,
+        246,
+        184,
+        182,
+        252,
+        218
+      ]
+    },
+    {
+      "name": "SecurityState",
+      "discriminator": [
+        61,
+        133,
+        136,
+        156,
+        159,
+        96,
+        12,
+        57
+      ]
+    },
+    {
+      "name": "WriterPosition",
+      "discriminator": [
+        195,
+        252,
+        56,
+        77,
+        221,
+        13,
+        8,
+        69
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ContractsWritten",
+      "discriminator": [
+        41,
+        49,
+        6,
+        102,
+        238,
+        138,
+        68,
+        248
+      ]
+    },
+    {
+      "name": "Exercised",
+      "discriminator": [
+        199,
+        234,
+        66,
+        198,
+        152,
+        62,
+        234,
+        154
+      ]
+    },
+    {
+      "name": "HaltAttested",
+      "discriminator": [
+        79,
+        78,
+        91,
+        104,
+        27,
+        174,
+        72,
+        158
+      ]
+    },
+    {
+      "name": "PositionSettled",
+      "discriminator": [
+        75,
+        100,
+        92,
+        189,
+        245,
+        116,
+        252,
+        221
+      ]
+    },
+    {
+      "name": "PremiumClaimed",
+      "discriminator": [
+        60,
+        221,
+        78,
+        168,
+        150,
+        45,
+        78,
+        169
+      ]
+    },
+    {
+      "name": "Refused",
+      "discriminator": [
+        230,
+        49,
+        133,
+        208,
+        106,
+        62,
+        106,
+        169
+      ]
+    },
+    {
+      "name": "SecurityRegistered",
+      "discriminator": [
+        27,
+        89,
+        17,
+        195,
+        167,
+        131,
+        214,
+        16
+      ]
+    },
+    {
+      "name": "SecuritySynced",
+      "discriminator": [
+        199,
+        166,
+        254,
+        154,
+        105,
+        76,
+        45,
+        126
+      ]
+    },
+    {
+      "name": "SeriesCreated",
+      "discriminator": [
+        2,
+        164,
+        54,
+        38,
+        24,
+        181,
+        233,
+        180
+      ]
+    },
+    {
+      "name": "StrikeAdjusted",
+      "discriminator": [
+        37,
+        45,
+        24,
+        87,
+        210,
+        4,
+        200,
+        133
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MarketClosed",
+      "msg": "Market is closed for this security"
+    },
+    {
+      "code": 6001,
+      "name": "Halted",
+      "msg": "Trading in this security is halted"
+    },
+    {
+      "code": 6002,
+      "name": "OracleStale",
+      "msg": "Price is stale inside an open session"
+    },
+    {
+      "code": 6003,
+      "name": "ConfidenceBlown",
+      "msg": "Price confidence is too wide to act on"
+    },
+    {
+      "code": 6004,
+      "name": "MultiplierPending",
+      "msg": "A corporate action is pending on this mint"
+    },
+    {
+      "code": 6005,
+      "name": "IssuerPaused",
+      "msg": "Issuer has paused transfers of this mint"
+    },
+    {
+      "code": 6006,
+      "name": "HookAttached",
+      "msg": "A transfer hook has been attached to this mint"
+    },
+    {
+      "code": 6007,
+      "name": "SourcesDisagree",
+      "msg": "Price sources disagree beyond the allowed divergence"
+    },
+    {
+      "code": 6008,
+      "name": "SingleSource",
+      "msg": "Security is bound to a single price source and nothing corroborates it"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidMultiplier",
+      "msg": "ScaledUiAmount multiplier is zero, negative, NaN or infinite"
+    },
+    {
+      "code": 6010,
+      "name": "MathOverflow",
+      "msg": "Fixed-point arithmetic overflowed"
+    },
+    {
+      "code": 6011,
+      "name": "MissingScaledUiAmount",
+      "msg": "Mint does not carry the ScaledUiAmount extension"
+    },
+    {
+      "code": 6012,
+      "name": "OracleSourceMismatch",
+      "msg": "Oracle account does not match the configured source"
+    },
+    {
+      "code": 6013,
+      "name": "ScopeIndexOutOfRange",
+      "msg": "Scope price index is out of range"
+    },
+    {
+      "code": 6014,
+      "name": "ExpiryNotInSession",
+      "msg": "Expiry does not fall inside a regular trading session"
+    },
+    {
+      "code": 6015,
+      "name": "ExpiryInThePast",
+      "msg": "Expiry is already in the past"
+    },
+    {
+      "code": 6016,
+      "name": "PutsNotSupported",
+      "msg": "Only covered calls are written by this venue"
+    },
+    {
+      "code": 6017,
+      "name": "ZeroAmount",
+      "msg": "Contract size, strike or amount is zero"
+    },
+    {
+      "code": 6018,
+      "name": "WrongSeriesState",
+      "msg": "Series is not in a state that allows this action"
+    },
+    {
+      "code": 6019,
+      "name": "SettlementWindowNotOpen",
+      "msg": "Settlement window has not opened yet"
+    },
+    {
+      "code": 6020,
+      "name": "SettlementWindowClosed",
+      "msg": "Settlement window has closed"
+    },
+    {
+      "code": 6021,
+      "name": "InsufficientCollateral",
+      "msg": "Not enough collateral in the vault"
+    },
+    {
+      "code": 6022,
+      "name": "PremiumAlreadyClaimed",
+      "msg": "Premium has already been claimed"
+    },
+    {
+      "code": 6023,
+      "name": "NothingToSettle",
+      "msg": "Nothing left to settle for this position"
+    },
+    {
+      "code": 6024,
+      "name": "SecurityMismatch",
+      "msg": "Account does not belong to this security"
+    },
+    {
+      "code": 6025,
+      "name": "CalendarMismatch",
+      "msg": "Calendar account is not the one this security is gated by"
+    },
+    {
+      "code": 6026,
+      "name": "MintMismatch",
+      "msg": "Mint does not match the one this account was opened against"
+    },
+    {
+      "code": 6027,
+      "name": "CalendarFull",
+      "msg": "Calendar has no room for more entries"
+    },
+    {
+      "code": 6028,
+      "name": "RegistryPaused",
+      "msg": "Registry is paused"
+    },
+    {
+      "code": 6029,
+      "name": "NotAuthority",
+      "msg": "Signer is not the registry authority"
+    },
+    {
+      "code": 6030,
+      "name": "NotAttestor",
+      "msg": "Signer is not the registered halt attestor"
+    },
+    {
+      "code": 6031,
+      "name": "NotPositionOwner",
+      "msg": "Signer does not own this position"
+    }
+  ],
+  "types": [
+    {
+      "name": "CalendarEntry",
+      "docs": [
+        "A single deviation from the regular weekday session."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "date_key",
+            "docs": [
+              "`(month << 8) | day`. Pyth publishes its schedule as bare MMDD, so a",
+              "calendar covers the twelve-month window it was committed for and the",
+              "authority appends the next one rather than the program guessing when a",
+              "moveable holiday lands."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "kind",
+            "docs": [
+              "[`ENTRY_CLOSED`] or [`ENTRY_EARLY_CLOSE`]."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "close_minute",
+            "docs": [
+              "Minutes past local midnight, meaningful only for an early close."
+            ],
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ContractsWritten",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "series",
+            "type": "pubkey"
+          },
+          {
+            "name": "writer",
+            "type": "pubkey"
+          },
+          {
+            "name": "contracts",
+            "type": "u64"
+          },
+          {
+            "name": "raw_collateral",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Exercised",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "series",
+            "type": "pubkey"
+          },
+          {
+            "name": "holder",
+            "type": "pubkey"
+          },
+          {
+            "name": "contracts",
+            "type": "u64"
+          },
+          {
+            "name": "strike",
+            "docs": [
+              "The strike actually charged, after the multiplier re-cut."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "quote_paid",
+            "type": "u64"
+          },
+          {
+            "name": "raw_delivered",
+            "type": "u64"
+          },
+          {
+            "name": "at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "HaltAttested",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "security",
+            "type": "pubkey"
+          },
+          {
+            "name": "halted",
+            "type": "bool"
+          },
+          {
+            "name": "since_ts",
+            "type": "i64"
+          },
+          {
+            "name": "at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "HaltState",
+      "docs": [
+        "Attested halt state for a security.",
+        "",
+        "A halt is the one condition no on-chain source can tell us: `PriceUpdateV2`",
+        "dropped the legacy `PriceStatus` enum, so halted, closed, outage and early",
+        "close are indistinguishable from staleness alone. It therefore arrives",
+        "signed by the registry's attestor and is stored, not inferred."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "halted",
+            "type": "bool"
+          },
+          {
+            "name": "since_ts",
+            "docs": [
+              "When the halt began, as reported by the source."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "attested_ts",
+            "docs": [
+              "When the attestor signed it. Stale attestations are the attestor's",
+              "problem to refresh, not something we silently expire."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "source",
+            "docs": [
+              "Which feed the attestation came from."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketCalendar",
+      "docs": [
+        "The exchange schedule, committed on-chain.",
+        "",
+        "We commit the price publisher's own published schedule rather than our own,",
+        "so the gate cannot disagree with the feed it guards."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "docs": [
+              "Identifies the calendar in its PDA seed; `0` is US equities."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "version",
+            "docs": [
+              "Bumped whenever entries change, so an indexer can tell which schedule a",
+              "past refusal was decided under."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "regular_open_minute",
+            "type": "u16"
+          },
+          {
+            "name": "regular_close_minute",
+            "type": "u16"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "entries",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "CalendarEntry"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Observation",
+      "docs": [
+        "A price as the gate sees it. `price * 10^expo` is the value in USD."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "type": "i64"
+          },
+          {
+            "name": "conf",
+            "docs": [
+              "Half-width of the source's uncertainty band, in the same units as",
+              "`price`. Zero from a source that publishes no band at all — see",
+              "[`OracleSource::reports_confidence`], because zero is an absence of",
+              "information and not a claim of exactness."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "expo",
+            "type": "i32"
+          },
+          {
+            "name": "publish_ts",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OptionKind",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Call"
+          },
+          {
+            "name": "Put"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OptionSeries",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "security",
+            "type": "pubkey"
+          },
+          {
+            "name": "underlying_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "option_mint",
+            "docs": [
+              "Minted 1:1 with contracts, zero decimals. Burned on exercise."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "collateral_vault",
+            "docs": [
+              "Holds the raw underlying that backs every written contract."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "premium_vault",
+            "docs": [
+              "Premium, denominated in the underlying share. A covered call written",
+              "here accumulates the share itself."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_vault",
+            "docs": [
+              "Exercise proceeds, in the quote asset."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "kind",
+            "type": {
+              "defined": {
+                "name": "OptionKind"
+              }
+            }
+          },
+          {
+            "name": "expiry_ts",
+            "docs": [
+              "Validated at creation to land inside a regular session."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "strike0",
+            "docs": [
+              "Quote units per UI unit — per adjusted share — at creation."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "multiplier_at_mint",
+            "docs": [
+              "The mint's effective multiplier when the series was created. Immutable:",
+              "it is half of the invariant."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "contract_raw_size",
+            "docs": [
+              "Raw units of the underlying one contract covers. Immutable, and raw",
+              "rather than UI precisely so a split cannot change what is delivered."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "settlement_window_minutes",
+            "docs": [
+              "Length of the exercise window, in minutes of open-market time."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "adjust_on_corporate_action",
+            "docs": [
+              "False writes an unadjusted series: the strike ignores the mint. Every",
+              "options venue on tokenized equities today writes one of these by",
+              "omission. Being able to express it is what makes the invariant",
+              "falsifiable instead of merely asserted."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "underlying_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "quote_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "contracts_written",
+            "type": "u64"
+          },
+          {
+            "name": "contracts_exercised",
+            "type": "u64"
+          },
+          {
+            "name": "quote_collected",
+            "docs": [
+              "Quote units taken in by exercises, before writers claim them."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "premium_claimed_total",
+            "docs": [
+              "Premium already paid out, so a later claimant sees the same denominator."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "window_opened_ts",
+            "docs": [
+              "First instant after expiry at which the gate allowed an exercise. Zero",
+              "until one does; informational, the window itself is computed."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "acknowledged_multiplier",
+            "docs": [
+              "The multiplier the last `acknowledge_adjustment` reported."
+            ],
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OracleBinding",
+      "docs": [
+        "What a security is allowed to be priced from.",
+        "",
+        "Scope publishes several entries per name on one account, and two of them are",
+        "sourced differently: the `PythLazer` entry carries Pyth's own number, and the",
+        "`Checked` entry is a `CappedFloored` composition whose cap and floor come",
+        "from Chainlink — so once the bound binds, the two entries are genuinely two",
+        "vendors. Verified live on 2026-09-22: AAPLx `Checked` 317 printed 340.098163,",
+        "exactly the ChainlinkX entry at 258, while `PythLazer` 315 printed 340.670950.",
+        "Binding both is therefore the normal case, not a luxury.",
+        "",
+        "A single source is representable, because one will sometimes be all there is,",
+        "but it has to be spelled out — and the gate still refuses to act on it. An",
+        "options venue that settles against one unfalsifiable number is a venue that",
+        "settles against whatever that number says."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pair",
+            "fields": [
+              {
+                "name": "primary",
+                "type": {
+                  "defined": {
+                    "name": "OracleSource"
+                  }
+                }
+              },
+              {
+                "name": "secondary",
+                "type": {
+                  "defined": {
+                    "name": "OracleSource"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "SingleDeclared",
+            "fields": [
+              {
+                "name": "primary",
+                "type": {
+                  "defined": {
+                    "name": "OracleSource"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "OracleSource",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Scope",
+            "fields": [
+              {
+                "name": "index",
+                "type": "u16"
+              }
+            ]
+          },
+          {
+            "name": "Pyth",
+            "fields": [
+              {
+                "name": "feed_id",
+                "type": {
+                  "array": [
+                    "u8",
+                    32
+                  ]
+                }
+              },
+              {
+                "name": "max_age",
+                "type": "u32"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "PositionSettled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "series",
+            "type": "pubkey"
+          },
+          {
+            "name": "writer",
+            "type": "pubkey"
+          },
+          {
+            "name": "contracts_assigned",
+            "type": "u64"
+          },
+          {
+            "name": "raw_returned",
+            "type": "u64"
+          },
+          {
+            "name": "quote_paid",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PremiumClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "series",
+            "type": "pubkey"
+          },
+          {
+            "name": "writer",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Refused",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "security",
+            "type": "pubkey"
+          },
+          {
+            "name": "code",
+            "type": "u8"
+          },
+          {
+            "name": "at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Registry",
+      "docs": [
+        "Program-wide configuration. One per deployment."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "May create calendars, register securities and repoint oracle sources."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "attestor",
+            "docs": [
+              "The only key whose halt attestations the program accepts."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "docs": [
+              "Kill switch. Set it and every gated action refuses."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SecurityRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "security",
+            "type": "pubkey"
+          },
+          {
+            "name": "underlying_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "symbol",
+            "type": {
+              "array": [
+                "u8",
+                12
+              ]
+            }
+          },
+          {
+            "name": "calendar_id",
+            "type": "u16"
+          },
+          {
+            "name": "multiplier",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SecurityState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "underlying_mint",
+            "docs": [
+              "The Token-2022 mint this security *is*. Also its PDA seed."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "symbol",
+            "docs": [
+              "ASCII, right-padded with zeroes: \"AAPLx\"."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                12
+              ]
+            }
+          },
+          {
+            "name": "calendar_id",
+            "docs": [
+              "Which committed exchange calendar gates it."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "decimals",
+            "docs": [
+              "Copied from the mint so a reader does not have to unpack it."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "sources",
+            "type": {
+              "defined": {
+                "name": "OracleBinding"
+              }
+            }
+          },
+          {
+            "name": "observed_multiplier",
+            "docs": [
+              "The multiplier in force at the last sync, fixed-point 1e12."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "pending_multiplier",
+            "docs": [
+              "A scheduled change, or zero when there is none pending."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "pending_effective_ts",
+            "type": "i64"
+          },
+          {
+            "name": "multiplier_epoch",
+            "docs": [
+              "Increments whenever `observed_multiplier` moves, so an indexer can count",
+              "corporate actions without diffing every sync."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "mint_paused",
+            "type": "bool"
+          },
+          {
+            "name": "transfer_hook",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "primary",
+            "type": {
+              "defined": {
+                "name": "Observation"
+              }
+            }
+          },
+          {
+            "name": "secondary",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "Observation"
+                }
+              }
+            }
+          },
+          {
+            "name": "synced_ts",
+            "type": "i64"
+          },
+          {
+            "name": "halt",
+            "type": {
+              "defined": {
+                "name": "HaltState"
+              }
+            }
+          },
+          {
+            "name": "max_price_age",
+            "type": "u32"
+          },
+          {
+            "name": "max_conf_bps",
+            "type": "u32"
+          },
+          {
+            "name": "max_divergence_bps",
+            "type": "u32"
+          },
+          {
+            "name": "refusals",
+            "docs": [
+              "Counted by `probe_security`, which is the only path that can record a",
+              "refusal: an instruction that refuses reverts, so its own counter goes",
+              "with it. The refused transaction's logs carry the `Refused` event."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "last_refusal_code",
+            "type": "u8"
+          },
+          {
+            "name": "last_refusal_ts",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SecuritySynced",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "security",
+            "type": "pubkey"
+          },
+          {
+            "name": "multiplier",
+            "type": "u128"
+          },
+          {
+            "name": "multiplier_epoch",
+            "type": "u64"
+          },
+          {
+            "name": "price",
+            "type": "i64"
+          },
+          {
+            "name": "expo",
+            "type": "i32"
+          },
+          {
+            "name": "publish_ts",
+            "type": "i64"
+          },
+          {
+            "name": "at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SeriesCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "series",
+            "type": "pubkey"
+          },
+          {
+            "name": "security",
+            "type": "pubkey"
+          },
+          {
+            "name": "underlying_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "expiry_ts",
+            "type": "i64"
+          },
+          {
+            "name": "strike0",
+            "type": "u64"
+          },
+          {
+            "name": "contract_raw_size",
+            "type": "u64"
+          },
+          {
+            "name": "multiplier_at_mint",
+            "type": "u128"
+          },
+          {
+            "name": "adjust_on_corporate_action",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StrikeAdjusted",
+      "docs": [
+        "Emitted by `acknowledge_adjustment`. Correctness does not depend on this",
+        "ever being sent; the UI and the indexers do."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "series",
+            "type": "pubkey"
+          },
+          {
+            "name": "old_strike",
+            "type": "u64"
+          },
+          {
+            "name": "new_strike",
+            "type": "u64"
+          },
+          {
+            "name": "old_multiplier",
+            "type": "u128"
+          },
+          {
+            "name": "new_multiplier",
+            "type": "u128"
+          },
+          {
+            "name": "at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WriterPosition",
+      "docs": [
+        "One writer's obligation against a series.",
+        "",
+        "The receipt is this account rather than a token. A writer's position is a",
+        "short option plus the collateral standing behind it; minting a transferable",
+        "receipt would let the obligation be sold away from the collateral backing",
+        "it, and then the venue would have to chase whoever holds the paper."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "series",
+            "type": "pubkey"
+          },
+          {
+            "name": "contracts",
+            "docs": [
+              "Contracts written, which is also this writer's share of assignment."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "raw_collateral",
+            "docs": [
+              "Raw underlying deposited, always `contracts * contract_raw_size`."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "premium_claimed",
+            "docs": [
+              "Premium already taken, in underlying raw units."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "settled",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "CALENDAR_SEED",
+      "type": "bytes",
+      "value": "[99, 97, 108, 101, 110, 100, 97, 114]"
+    },
+    {
+      "name": "OPTION_MINT_SEED",
+      "type": "bytes",
+      "value": "[111, 112, 116, 105, 111, 110]"
+    },
+    {
+      "name": "PREMIUM_SEED",
+      "type": "bytes",
+      "value": "[112, 114, 101, 109, 105, 117, 109]"
+    },
+    {
+      "name": "QUOTE_SEED",
+      "type": "bytes",
+      "value": "[113, 117, 111, 116, 101]"
+    },
+    {
+      "name": "REGISTRY_SEED",
+      "type": "bytes",
+      "value": "[114, 101, 103, 105, 115, 116, 114, 121]"
+    },
+    {
+      "name": "SECURITY_SEED",
+      "type": "bytes",
+      "value": "[115, 101, 99, 117, 114, 105, 116, 121]"
+    },
+    {
+      "name": "SERIES_SEED",
+      "type": "bytes",
+      "value": "[115, 101, 114, 105, 101, 115]"
+    },
+    {
+      "name": "VAULT_SEED",
+      "type": "bytes",
+      "value": "[118, 97, 117, 108, 116]"
+    },
+    {
+      "name": "WRITER_SEED",
+      "type": "bytes",
+      "value": "[119, 114, 105, 116, 101, 114]"
+    }
+  ]
+}

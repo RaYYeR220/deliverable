@@ -1,0 +1,40 @@
+{
+  "name": "@stocklana/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript client for the Deliverable program: rail reads, the refusal gate evaluated off-chain, instruction builders, and multiplier-correct Token-2022 balances.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "idl"
+  ],
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@solana-program/token-2022": "^0.19.0",
+    "@solana/kit": "^8.3.0",
+    "@solana/sysvars": "^8.3.0"
+  },
+  "devDependencies": {
+    "@codama/nodes-from-anchor": "^1.5.6",
+    "@codama/renderers-js": "^2.5.0",
+    "@types/node": "^24.0.0",
+    "codama": "^1.11.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}
