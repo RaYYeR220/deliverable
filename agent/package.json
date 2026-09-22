@@ -1,0 +1,29 @@
+{
+  "name": "@stocklana/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Wheelwright: a covered-call wheel operator for tokenised equities. Reads the Deliverable rail, prices option series off the Meteora DBC curve, proposes the wheel action, and refuses exactly where the program refuses. Holds no key and signs nothing.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "wheel": "tsx src/cli.ts",
+    "clawpump": "tsx src/clawpump.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@solana-program/token-2022": "^0.19.0",
+    "@solana/kit": "^8.3.0",
+    "@stocklana/market": "link:../market",
+    "@stocklana/sdk": "link:../sdk"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.3",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}
