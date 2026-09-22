@@ -8,6 +8,8 @@ const repositoryRoot = path.resolve(process.cwd(), '..');
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Keep `next dev` from writing its own guidance files into the app directory.
+  agentRules: false,
   turbopack: { root: repositoryRoot },
   outputFileTracingRoot: repositoryRoot,
   async headers() {
