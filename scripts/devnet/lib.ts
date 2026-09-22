@@ -81,10 +81,79 @@ export const FEEDS = {
 } as const;
 export const AAPL_FEED = FEEDS['Equity.US.AAPL/USD'];
 
-/** Calendar 0 is US equities, as in `MarketCalendar`. */
-export const US_EQUITY_CALENDAR_ID = 0;
+/**
+ * Which US equity calendar the scripts act on.
+ *
+ * `["calendar", id]` is a PDA seed and a PDA cannot be closed here, so a
+ * calendar whose entries were written under a superseded `CalendarEntry`
+ * layout is replaced by initialising the next id rather than by rewriting it.
+ * Calendar 0 was written with the pre-audit `date_key: u16`; calendar 1 is the
+ * current one.
+ */
+export const DEFAULT_CALENDAR_ID = 1;
 export const REGULAR_OPEN_MINUTE = 9 * 60 + 30;
 export const REGULAR_CLOSE_MINUTE = 16 * 60;
+
+// --- command line ----------------------------------------------------------
+
+const ARGV = process.argv.slice(2);
+
+/** `--name`. */
+export function flag(name: string): boolean {
+  return ARGV.includes(`--${name}`);
+}
+
+/** `--name=value` or `--name value`. */
+export function option(name: string): string | undefined {
+  const inline = ARGV.find((a) => a.startsWith(`--${name}=`));
+  if (inline) return inline.slice(name.length + 3);
+  const i = ARGV.indexOf(`--${name}`);
+  const next = i >= 0 ? ARGV[i + 1] : undefined;
+  return next !== undefined && !next.startsWith('--') ? next : undefined;
+}
+
+/**
+ * The calendar id every script works against: `--calendar-id=<u16>`, else the
+ * `CALENDAR_ID` environment variable, else whatever the deployment record was
+ * last initialised with, else [`DEFAULT_CALENDAR_ID`].
+ */
+export function calendarId(): number {
+  const raw = option('calendar-id') ?? process.env.CALENDAR_ID;
+  if (raw !== undefined) {
+    const id = Number(raw);
+    if (!Number.isInteger(id) || id < 0 || id > 0xffff) {
+      throw new Error(`--calendar-id must be an integer in 0..65535, got ${JSON.stringify(raw)}`);
+    }
+    return id;
+  }
+  const recorded = readDeployment().calendarId;
+  return typeof recorded === 'number' ? recorded : DEFAULT_CALENDAR_ID;
+}
+
+/**
+ * Which key in `keys/` the stand-in mint uses: `--mint-key=<name>`, else
+ * `--new-mint` to take the next unused `standin-mint-N` slot, else the key the
+ * deployment record names, else `standin-mint`.
+ */
+export function standinMintKeyName(): string {
+  const explicit = option('mint-key');
+  if (explicit !== undefined) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(explicit)) {
+      throw new Error('--mint-key must be a plain file name, without a path');
+    }
+    return explicit;
+  }
+  if (flag('new-mint')) {
+    mkdirSync(KEYS_DIR, { recursive: true });
+    for (let n = 2; n < 1000; n++) {
+      const name = `standin-mint-${n}`;
+      if (!existsSync(join(KEYS_DIR, `${name}.json`))) return name;
+    }
+    throw new Error('no free standin-mint key slot in keys/');
+  }
+  const recorded = readDeployment().standinMintKey;
+  return typeof recorded === 'string' ? recorded : 'standin-mint';
+}
 
 /** The program's defaults, from `constants.rs`. */
 export const DEFAULT_MAX_PRICE_AGE_SECS = 60;
@@ -310,6 +379,7 @@ export function initCalendarIx(authority: PublicKey, id: number, openMinute: num
 }
 
 export interface CalendarEntry {
+  /** `(year << 16) | (month << 8) | day`, as `MarketCalendar::date_key`. */
   dateKey: number;
   kind: number; // 0 closed, 1 early close
   closeMinute: number;
@@ -318,10 +388,22 @@ export interface CalendarEntry {
 export const ENTRY_CLOSED = 0;
 export const ENTRY_EARLY_CLOSE = 1;
 
-export function appendCalendarEntriesIx(authority: PublicKey, calendarId: number, entries: CalendarEntry[]) {
+/** `MarketCalendar::date_key`. The year is part of the key, not decoration. */
+export function dateKey(year: number, month: number, day: number): number {
+  return ((year << 16) | (month << 8) | day) >>> 0;
+}
+
+export function fmtDateKey(key: number): string {
+  const y = key >>> 16;
+  const m = String((key >> 8) & 0xff).padStart(2, '0');
+  const d = String(key & 0xff).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function appendCalendarEntriesIx(authority: PublicKey, id: number, entries: CalendarEntry[]) {
   const wr = new Writer().u32(entries.length);
-  for (const e of entries) wr.u16(e.dateKey).u8(e.kind).u16(e.closeMinute);
-  return ix('append_calendar_entries', [r(authority, true), w(calendarPda(calendarId))], wr.done());
+  for (const e of entries) wr.u32(e.dateKey).u8(e.kind).u16(e.closeMinute);
+  return ix('append_calendar_entries', [r(authority, true), w(calendarPda(id))], wr.done());
 }
 
 export type OracleSource =
@@ -383,14 +465,43 @@ export function syncSecurityIx(mint: PublicKey, oracle: PublicKey) {
 }
 
 /** `probe_security`: ask the gate for its verdict and record it. */
-export function probeSecurityIx(mint: PublicKey, calendarId: number, oracle: PublicKey) {
-  return ix('probe_security', [w(securityPda(mint)), r(calendarPda(calendarId)), r(mint), r(oracle), r(oracle)]);
+export function probeSecurityIx(mint: PublicKey, id: number, oracle: PublicKey) {
+  return ix('probe_security', [w(securityPda(mint)), r(calendarPda(id)), r(mint), r(oracle), r(oracle)]);
 }
 
 // --- decoders --------------------------------------------------------------
 
-function expectDisc(data: Buffer, disc: readonly number[], name: string): Reader {
+/**
+ * `8 + T::INIT_SPACE` for each account the scripts read, under the program as
+ * it is built now.
+ *
+ * These are checked, not assumed. An account allocated by an earlier build is
+ * shorter than the layout the current program writes, and borsh will happily
+ * decode the prefix and then read every field past the change at the wrong
+ * offset — which is how a `last_refusal_ts` of 72057595844812450 and a refusal
+ * counter that never moved got into the record on 2026-09-22. A PDA cannot be
+ * closed and reopened here, so the only answer is a new seed; the decoder's job
+ * is to say so loudly instead of returning plausible nonsense.
+ */
+export const ACCOUNT_LEN = {
+  /** authority, attestor, paused, bump. */
+  Registry: 8 + 32 + 32 + 1 + 1,
+  /** authority, id, version, open, close, bump, Vec<CalendarEntry> x 64 at 7 bytes each. */
+  MarketCalendar: 8 + 32 + 2 + 2 + 2 + 2 + 1 + 4 + 64 * 7,
+  /** …halt.lifted_ts included; 321 bytes of data. */
+  SecurityState: 329,
+} as const;
+
+function expectDisc(data: Buffer, disc: readonly number[], name: keyof typeof ACCOUNT_LEN): Reader {
   if (!data.subarray(0, 8).equals(Buffer.from(disc))) throw new Error(`not a ${name} account`);
+  const want = ACCOUNT_LEN[name];
+  if (data.length < want) {
+    throw new Error(
+      `${name} account is ${data.length} bytes; the current program's layout needs ${want}. ` +
+        'It was allocated by an older build and cannot be decoded at these offsets. ' +
+        'Create a fresh one under a new seed (see scripts/devnet/README.md).',
+    );
+  }
   const rd = new Reader(data);
   rd.off = 8;
   return rd;
@@ -411,7 +522,7 @@ export function decodeCalendar(data: Buffer) {
   const bump = rd.u8();
   const n = rd.u32();
   const entries: CalendarEntry[] = [];
-  for (let i = 0; i < n; i++) entries.push({ dateKey: rd.u16(), kind: rd.u8(), closeMinute: rd.u16() });
+  for (let i = 0; i < n; i++) entries.push({ dateKey: rd.u32(), kind: rd.u8(), closeMinute: rd.u16() });
   return { authority, id, version, regularOpenMinute, regularCloseMinute, bump, entries };
 }
 
@@ -448,7 +559,15 @@ export function decodeSecurityState(data: Buffer) {
   const primary = readObservation(rd);
   const secondary = rd.u8() === 1 ? readObservation(rd) : null;
   const syncedTs = rd.i64();
-  const halt = { halted: rd.bool(), sinceTs: rd.i64(), attestedTs: rd.i64(), source: rd.u8() };
+  // `lifted_ts` is the field the audit appended to `HaltState`; everything
+  // after `halt` sits eight bytes further along than it used to.
+  const halt = {
+    halted: rd.bool(),
+    sinceTs: rd.i64(),
+    attestedTs: rd.i64(),
+    source: rd.u8(),
+    liftedTs: rd.i64(),
+  };
   const maxPriceAge = rd.u32();
   const maxConfBps = rd.u32();
   const maxDivergenceBps = rd.u32();
@@ -540,6 +659,8 @@ export const REFUSAL_NAMES: Record<number, string> = {
   7: 'HookAttached',
   8: 'SourcesDisagree',
   9: 'SingleSource',
+  10: 'OracleUnreadable',
+  11: 'MultiplierUnreadable',
 };
 
 /** `price * 10^expo` as a decimal string, exactly. */

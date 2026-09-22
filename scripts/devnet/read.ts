@@ -24,6 +24,7 @@ import { PublicKey } from '@solana/web3.js';
 import {
   PROGRAM_ID,
   REFUSAL_NAMES,
+  calendarId,
   calendarPda,
   connection,
   decodeCalendar,
@@ -31,6 +32,7 @@ import {
   decodeRegistry,
   decodeSecurityState,
   explorer,
+  fmtDateKey,
   fmtFixed,
   readDeployment,
   registryPda,
@@ -56,9 +58,11 @@ async function main() {
   console.log(`\nRegistry ${registryPda().toBase58()}`);
   console.log(`  authority ${reg.authority.toBase58()}  attestor ${reg.attestor.toBase58()}  paused ${reg.paused}`);
 
-  const cal = decodeCalendar((await conn.getAccountInfo(calendarPda(0)))!.data);
-  console.log(`\nCalendar ${calendarPda(0).toBase58()}`);
+  const id = calendarId();
+  const cal = decodeCalendar((await conn.getAccountInfo(calendarPda(id)))!.data);
+  console.log(`\nCalendar ${calendarPda(id).toBase58()}`);
   console.log(`  id ${cal.id}  version ${cal.version}  regular ${cal.regularOpenMinute}-${cal.regularCloseMinute} min ET  entries ${cal.entries.length}`);
+  console.log(`  ${cal.entries.map((e) => `${fmtDateKey(e.dateKey)}${e.kind === 1 ? `@${e.closeMinute}` : ''}`).join(' ')}`);
 
   if (typeof d.standinMint !== 'string') return;
   const mint = new PublicKey(d.standinMint);
@@ -94,7 +98,10 @@ async function main() {
     console.log(`  sources ${JSON.stringify(s.sources)}`);
   }
   console.log(`  observed_multiplier ${fmtFixed(s.observedMultiplier, -12)}  pending ${s.pendingMultiplier}  epoch ${s.multiplierEpoch}`);
-  console.log(`  mint_paused ${s.mintPaused}  transfer_hook ${s.transferHook?.toBase58() ?? 'null'}  halted ${s.halt.halted}`);
+  console.log(`  mint_paused ${s.mintPaused}  transfer_hook ${s.transferHook?.toBase58() ?? 'null'}`);
+  console.log(
+    `  halt: halted ${s.halt.halted} since_ts ${s.halt.sinceTs} attested_ts ${s.halt.attestedTs} lifted_ts ${s.halt.liftedTs} source ${s.halt.source}`,
+  );
   console.log(`  max_price_age ${s.maxPriceAge}s  max_conf_bps ${s.maxConfBps}  max_divergence_bps ${s.maxDivergenceBps}`);
   console.log(
     `  primary (last sync): price ${fmtFixed(s.primary.price, s.primary.expo)} conf ${fmtFixed(s.primary.conf, s.primary.expo)} expo ${s.primary.expo} publish_ts ${s.primary.publishTs}`,
@@ -108,7 +115,8 @@ async function main() {
   console.log(`  last_refusal_code ${s.lastRefusalCode} (${REFUSAL_NAMES[s.lastRefusalCode] ?? 'none'})`);
   console.log(`  last_refusal_ts ${s.lastRefusalTs} (${new Date(Number(s.lastRefusalTs) * 1000).toISOString()})`);
 
-  const probes = (d.probes as { priceUpdateAccount?: string }[] | undefined) ?? [];
+  const history = (d.history as { preAuditProbes?: { priceUpdateAccount?: string }[] } | undefined)?.preAuditProbes ?? [];
+  const probes = [...history, ...((d.probes as { priceUpdateAccount?: string }[] | undefined) ?? [])];
   for (const addr of new Set(probes.map((p) => p.priceUpdateAccount).filter(Boolean) as string[])) {
     const info = await conn.getAccountInfo(new PublicKey(addr));
     if (!info) {

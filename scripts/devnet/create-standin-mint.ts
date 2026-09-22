@@ -1,6 +1,12 @@
 // Step 2: a Token-2022 stand-in for AAPLx on devnet.
 //
-//   pnpm tsx create-standin-mint.ts
+//   pnpm tsx create-standin-mint.ts                  # the key the record names
+//   pnpm tsx create-standin-mint.ts --new-mint       # the next unused key slot
+//   pnpm tsx create-standin-mint.ts --mint-key=foo   # keys/foo.json
+//
+// `--new-mint` exists because `["security", mint]` is a PDA seed and this
+// program has no instruction to close a SecurityState: superseding one means
+// registering a new mint, not reusing the old one.
 //
 // There are no xStocks mints on devnet. This creates a mint WE control that
 // carries the same Token-2022 extension set as mainnet AAPLx
@@ -41,7 +47,7 @@ import {
 } from '@solana/spl-token-metadata';
 import { PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js';
 
-import { connection, explorer, localKeypair, recordField, rpcHost, send, wallet } from './lib.ts';
+import { connection, explorer, localKeypair, recordField, rpcHost, send, standinMintKeyName, wallet } from './lib.ts';
 
 export const STANDIN = {
   name: 'AAPLx devnet stand-in',
@@ -73,13 +79,15 @@ function initializeConfidentialTransferMintIx(mint: PublicKey, authority: Public
 async function main() {
   const conn = connection();
   const payer = wallet();
-  const mint = localKeypair('standin-mint');
+  const keyName = standinMintKeyName();
+  const mint = localKeypair(keyName);
   const authority = payer.publicKey;
   console.log(`rpc    ${rpcHost()}`);
-  console.log(`mint   ${mint.publicKey.toBase58()} (keys/standin-mint.json)`);
+  console.log(`mint   ${mint.publicKey.toBase58()} (keys/${keyName}.json)`);
 
   if (await conn.getAccountInfo(mint.publicKey)) {
     console.log('mint already exists, nothing to do');
+    recordField('standinMintKey', keyName);
     recordField('standinMint', mint.publicKey.toBase58());
     return;
   }
@@ -126,7 +134,7 @@ async function main() {
     createInitializeTransferHookInstruction(mint.publicKey, authority, PublicKey.default, TOKEN_2022_PROGRAM_ID),
     createInitializeMint2Instruction(mint.publicKey, STANDIN.decimals, authority, authority, TOKEN_2022_PROGRAM_ID),
   ];
-  await send(conn, 'create_standin_mint', ixs, [payer, mint]);
+  await send(conn, `create_standin_mint (keys/${keyName}.json)`, ixs, [payer, mint]);
 
   const metaIxs = [
     createInitializeMetadataInstruction({
@@ -149,8 +157,9 @@ async function main() {
       }),
     ),
   ];
-  await send(conn, 'standin_mint_metadata', metaIxs, [payer]);
+  await send(conn, `standin_mint_metadata (keys/${keyName}.json)`, metaIxs, [payer]);
 
+  recordField('standinMintKey', keyName);
   recordField('standinMint', mint.publicKey.toBase58());
   console.log(`\nStand-in mint ${mint.publicKey.toBase58()}`);
   console.log(`  ${explorer('address', mint.publicKey.toBase58())}`);

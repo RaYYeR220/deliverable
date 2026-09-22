@@ -13,10 +13,12 @@ evidence tier for each claim.
 
 ## Deployments
 
-- **The program is on devnet.** `DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa`, deployed at devnet
-  slot 502514997. Its live gate probes, the accounts it initialised and the devnet stand-in mint it
-  runs against are listed in [Deployments: the program on devnet](#deployments-the-program-on-devnet)
-  below. It is **not** a verified build: see that section for why.
+- **The program is on devnet.** `DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa`, first deployed at
+  slot 502514997 and **upgraded at slot 502597992** after the self-audit. What is on chain now is
+  the 458,040-byte build `53d5da02…`. The upgrade changed two account layouts and invalidated the
+  state accounts created before it; they were replaced, and both the old and the new are listed in
+  [the upgrade section](#devnet-the-program-upgrade-and-the-accounts-it-invalidated). Probes taken
+  before the upgrade are labelled as belonging to the earlier build. It is **not** a verified build.
 - **The series pool is not on mainnet yet.** It is a Meteora DBC pool for one covered-call series,
   quoted in AAPLx. Its two transactions have been simulated against live mainnet state and not sent
   ([`market/README.md`](market/README.md), "Mainnet — simulated against live state"), so no mainnet
@@ -173,7 +175,7 @@ given a second source, and no mock oracle is involved.
 | deploy transaction | [`9CFe4pXu…kLkP`](https://explorer.solana.com/tx/9CFe4pXu8WMq7KpMDG17hV5kM7TWe8r7HiD43j1Ca3hFcqRQMji5VtzY46nVpBd3PKenMaqty5BQpeXwYAQkLkP?cluster=devnet), slot 502514997, 16:39:03 UTC |
 | programdata | [`7BWNhWUjQgKn9ZBAWiyUcyriYrYz8Y8vy7q8NJ4JR2Mi`](https://explorer.solana.com/address/7BWNhWUjQgKn9ZBAWiyUcyriYrYz8Y8vy7q8NJ4JR2Mi?cluster=devnet) |
 | upgrade authority | `4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo` |
-| binary | `anchor build --tools-version v1.52 --arch v0`: 428,928 bytes, sha256 `93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41`. `solana program dump` of the deployed program gives the same hash. |
+| binary, as first deployed | `anchor build --tools-version v1.52 --arch v0`: 428,928 bytes, sha256 `93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41`. **This is no longer what is on chain.** The program was upgraded on 2026-09-22 after the self-audit; the current binary is 458,040 bytes, sha256 `53d5da025a9eae4d89abc2faac136721995eaff5280131326e9d9f7b6014d572`, and `solana program dump` returns 468,928 bytes whose first 458,040 match it exactly, the remainder being zero padding from extending the account. See [the upgrade](#devnet-the-program-upgrade-and-the-accounts-it-invalidated). |
 | SOL spent | 2.183428328 SOL (wallet 11.246332597, then 9.062904269). Of that, 2.180666200 SOL is rent held by the program and programdata accounts. The rest is fees, including 0.000495 SOL for a first attempt that failed mid-write and whose buffer was closed. |
 | verified build | **Not verified.** `solana-verify` 0.5.2 does not compile on Windows (`cargo install` fails: `unresolved import signal_hook::iterator`, which is Unix-only). Docker 29.5.2 is running, but the deployed binary is a Windows build that embeds backslash source paths such as `programs\deliverable\src\gate.rs`, so a Linux container build cannot reproduce it byte for byte. A verified build would mean building in `solanafoundation/solana-verifiable-build`, deploying that binary instead, and running `verify-from-repo` against a public commit. None of that has been done. |
 
@@ -231,3 +233,115 @@ last_refusal_ts     1790095703 (2026-09-22T16:48:23Z)
 primary             price 34243997 expo -5 = 342.43997, conf 2997 = 0.02997, publish_ts 1790095701
 secondary           none
 ```
+
+## Devnet: the program upgrade, and the accounts it invalidated
+
+**Everything in the section above — the deploy at slot 502514997, calendar `GcsF2uRF…tNAF`, stand-in
+mint `8AWMhkJ6…jq32`, SecurityState `4d8cqHM7…J2fT`, and gate probes 1 and 2 — was produced by the
+pre-audit build `93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41`.** Those probes
+are real: they were sent, they confirmed, and the refusals they recorded happened. They are evidence
+about that binary. They are not evidence about the binary on devnet now, and nothing below reuses
+them as if they were.
+
+A self-audit then fixed eleven findings, two of which changed an account layout. The program was
+upgraded in place.
+
+### The upgrade
+
+| item | value |
+|---|---|
+| programdata extend, +40,000 bytes | [`7BWNhWUjQgKn9ZBAWiyUcyriYrYz8Y8vy7q8NJ4JR2Mi`](https://explorer.solana.com/address/7BWNhWUjQgKn9ZBAWiyUcyriYrYz8Y8vy7q8NJ4JR2Mi?cluster=devnet), now 468,973 bytes |
+| upgrade transaction | [`4BJc4e6F…7fMmA`](https://explorer.solana.com/tx/4BJc4e6Fgt5tUqwpqdKXpgFinArYXSHpa3P4s6LDT7T3FtWSFqxX5qvUbw5My2KzMYegv2WShvawh7kbQs47fMmA?cluster=devnet), slot 502597992, 2026-09-22 20:28:23 UTC. Log: `Upgraded program DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa` |
+| binary now on chain | 458,040 bytes, sha256 `53d5da025a9eae4d89abc2faac136721995eaff5280131326e9d9f7b6014d572` |
+| how that was checked | the first 458,040 bytes of `solana program dump` are byte-identical to the local build; the remaining 10,888 bytes are zero padding left by the extend, so the hash of the whole dump is not the hash of the binary |
+| verified build | **still not verified**, for the reasons given in the section above. The upgrade does not change that. |
+
+### What the upgrade did to the existing state accounts
+
+Anchor's `#[account]` accounts are borsh. An upgrade replaces the code and leaves the bytes alone,
+so an account written by the old build still deserialises — it just stops meaning what it says from
+the first changed field onward, and nothing errors. Read back on 2026-09-22 before anything was
+recreated:
+
+| account | on chain | current layout needs | what the current build actually read |
+|---|---|---|---|
+| Registry [`DiK3Y7ZC…36Ls`](https://explorer.solana.com/address/DiK3Y7ZCK7n1ftXXQ6fboChc6MiiVhJdTu6GxCJf36Ls?cluster=devnet) | 74 bytes | 74 bytes | correct: authority `4EtAFmWt…CYKo`, attestor `J1uaVh6B…v5Tu`, `paused false`, bump 255. **Unchanged by the audit and reused as is.** |
+| MarketCalendar id 0 [`GcsF2uRF…tNAF`](https://explorer.solana.com/address/GcsF2uRFUydCCFEU1nDDr7NYj19iisojcshgzk1btNAF?cluster=devnet) | 373 bytes, 12 entries of 5 bytes | 501 bytes, 7 bytes an entry | `CalendarEntry.date_key` went from `u16` (MMDD) to `u32` (`(year << 16) \| (month << 8) \| day`). The stored `0x0907` reads as year 0, and entry 2 reads as `date_key 452984832, kind 11, close_minute 3073`. No key can match a real date, so the calendar silently has **no exceptions at all** — every holiday and half-day reads as a regular session. |
+| SecurityState [`4d8cqHM7…J2fT`](https://explorer.solana.com/address/4d8cqHM7UZgJnqbifntNa8GkLnpL89UPPpj2a3WUJ2fT?cluster=devnet) | 321 bytes | 329 bytes | `HaltState` gained `lifted_ts: i64`, so every field from `halt` on moved eight bytes. The current build read `lifted_ts 429496729660` — which is the old `max_price_age` and `max_conf_bps` side by side — and then **`max_price_age` 150, `max_conf_bps` 2, `max_divergence_bps` 3000934913**: the gate's tolerances, out of the wrong bytes. |
+
+The symptom that exposed it was probe [`2pycKz93…Kad9`](https://explorer.solana.com/tx/2pycKz93c6ctvRBLiiVLBfqg6FxEr7A8r5jMFq6XAvaeCbx7b6GtUbRbNGqiMgqmn1DBUWkuv8CsrPqfQsTbKad9?cluster=devnet),
+sent at 20:29:26 UTC, one minute after the upgrade. It confirmed, it emitted `Refused` with code 1,
+it logged `refused code=1`, and yet `refusals` stayed at 2 and `last_refusal_ts` read back as
+`72057595844812450`. Both are the same mismatch seen from either side: the program wrote every field
+from `halt` on eight bytes later than it found them, and a reader on the old layout looked where
+they used to be. `72057595844812450` is `0x010000006BB2DEA2`, and those eight bytes are, in order,
+the top three of `max_divergence_bps`, the four of `refusals`, and `last_refusal_code` — three
+different fields of the new layout, read as one integer. The counter the program itself incremented
+was not 2 either: it deserialised `refusals` out of the old `last_refusal_ts`, read 106, and wrote
+107. **That probe is recorded in `deployment.json` under `history.preAuditProbes` with
+`"invalid": true` and is not counted as a result.**
+
+This program has no instruction that closes a PDA, so neither account can be reopened at the right
+size. They are superseded, not deleted.
+
+### The accounts as they are now
+
+Sent 2026-09-22 between 20:47 and 20:49 UTC, all against the post-audit build.
+
+| account | address | created by |
+|---|---|---|
+| Registry, reused unchanged | [`DiK3Y7ZCK7n1ftXXQ6fboChc6MiiVhJdTu6GxCJf36Ls`](https://explorer.solana.com/address/DiK3Y7ZCK7n1ftXXQ6fboChc6MiiVhJdTu6GxCJf36Ls?cluster=devnet) | the pre-audit `init_registry` [`39oAup6Y…cf6R`](https://explorer.solana.com/tx/39oAup6YT18KApkUURkbjzQpawMp8FvjfzesfJyrQ33SLvrtuFGFzk6yTBVXeBdvKdDXPTZHdvP2ypcaj3jdcf6R?cluster=devnet); 74 bytes then, 74 bytes under the current layout |
+| Calendar **1**, US equities, 09:30 to 16:00 ET, the 13 entries of `US_EQUITY_2026_2027`, 501 bytes | [`tKVYAdK5euUqmZQC8PfMPprsFwrxy831MCGa3DUBnpe`](https://explorer.solana.com/address/tKVYAdK5euUqmZQC8PfMPprsFwrxy831MCGa3DUBnpe?cluster=devnet) | `init_calendar` [`5gXTEMvj…SH4S`](https://explorer.solana.com/tx/5gXTEMvjjUSxnW49rmLFDEqfgojgpzpKb4vGQ2AYMZp29TRMJgQ2jgzNifMQGnFbEhs4QGNewa7uDfTAtHPFSH4S?cluster=devnet) slot 502604790, `append_calendar_entries` [`3d3Kf6fS…mrZV`](https://explorer.solana.com/tx/3d3Kf6fSxr4ZZPRvBjQZkXCkdizZxyQRXoRrDTrgRNoHR5PAyjNkDzTiL7MDGTR856xKsMbJpLP27JAjLdMXmrZV?cluster=devnet) slot 502604796 |
+| **Stand-in** mint `AAPLd`, "AAPLx devnet stand-in" (Token-2022, **not an xStock**, zero supply) | [`BrASykYaPBCM6S7NQNeq6kbKKRGF5QgDw2rENPfQuEz3`](https://explorer.solana.com/address/BrASykYaPBCM6S7NQNeq6kbKKRGF5QgDw2rENPfQuEz3?cluster=devnet) | [`CTTig4ZS…sKuK`](https://explorer.solana.com/tx/CTTig4ZSZvkuUkqHg3bM1yAvqWhPRxnuNZY3j5ZMVMhyUY9fNX8XRDDzMEto4ntoMgqNWXtLQf1RJCktXG8sKuK?cluster=devnet) slot 502604884, metadata [`2MWdo4gK…ugZJ`](https://explorer.solana.com/tx/2MWdo4gK2xgaeoTaKGxgiqpAGycekrvAzpdutViusrLoHWAqqkLapHzhSMoroXnj3tbkhgfj5DKZ1hXkMqFPugZJ?cluster=devnet) slot 502604893 |
+| SecurityState for it, `SingleDeclared { Pyth Equity.US.AAPL/USD }`, calendar 1, 329 bytes | [`8S5KCJx8z8tcF2jRYmbiUaTi1QsLQXYZ3yFzZbK9QPxS`](https://explorer.solana.com/address/8S5KCJx8z8tcF2jRYmbiUaTi1QsLQXYZ3yFzZbK9QPxS?cluster=devnet) | `register_security` [`3S8HMib7…TYGM`](https://explorer.solana.com/tx/3S8HMib7dRN5yAkDLuSUvKNvaeQGS9P9ZuhdD8dcQJfkit8Gm2hPdZMtWDYB2S31UE8Zcq955GcupxZv4FUMTYGM?cluster=devnet) slot 502604958 |
+
+The calendar is a new id because `["calendar", id]` is a PDA seed; the SecurityState is a new
+address because `["security", mint]` is one, so superseding it means a new mint. That mint carries
+the same extension set as mainnet AAPLx and the same `standin_for` and `note` metadata fields as the
+first one: ScaledUiAmount at multiplier `1.0032690125398187`, Pausable not paused, TransferHook
+initialised with a null program id, PermanentDelegate, DefaultAccountState `Initialized`,
+ConfidentialTransferMint, MetadataPointer and TokenMetadata. Its supply is zero and it is backed by
+nothing. Read back with `cd scripts/devnet && pnpm run read`, the SecurityState reports
+`max_price_age 60s max_conf_bps 100 max_divergence_bps 150` and `lifted_ts 0` — the registered
+values, at the right offsets.
+
+Calendar 1 holds thirteen entries, not twelve: `2026-09-07 2026-11-26 2026-11-27@780 2026-12-24@780
+2026-12-25 2027-01-01 2027-01-18 2027-02-15 2027-03-26 2027-05-31 2027-06-18 2027-07-05
+2027-09-06`. The last is Labor Day 2027, outside the twelve months of Pyth's published capture and
+missing from the pre-audit table.
+
+### Gate probes on the post-audit build
+
+| probe | chain time (UTC) | session | Pyth update the gate read | transactions | verdict | `refusals` |
+|---|---|---|---|---|---|---|
+| 3 | 2026-09-22 20:48:02 (16:48 ET) | Closed | none. The oracle account was passed in and never read | `probe_security` [`21eS3A1F…pkLvo`](https://explorer.solana.com/tx/21eS3A1F1uPVJdxCaDwqFVpKtEdbqex7F4pZibTGfxiUDMxQmsbAHVmAmXX6duX1rMJGFLpNritKna1fT7ZpkLvo?cluster=devnet) | **1 `MarketClosed`** | 0 → 1 |
+| 4 | 2026-09-22 20:49:08 (16:49 ET) | Closed, with a live update posted anyway | `Equity.US.AAPL/USD` 339.87500 ± 0.10365 (3.049 bps), `publish_time` 1790110149, Full verification, [`ZDUNVSKb…Cxdfv`](https://explorer.solana.com/address/ZDUNVSKbJaoQXGcD8Dq1azvMAJeHMAshJSo1hJCxdfv?cluster=devnet) | Wormhole `VerifyEncodedVaaV1` [`2PVf6ozW…S9o5`](https://explorer.solana.com/tx/2PVf6ozW9WRenFnjonzsgSoENFdn8HrNW56iGVUKCWcmaTisd2KLupjwTV7d7GYBWU6vgUbwgnzP8tcmAupCS9o5?cluster=devnet); receiver `PostUpdate` + `sync_security` + `probe_security` [`58zz5LEF…iT5m`](https://explorer.solana.com/tx/58zz5LEFx8B8zZosMpF4L5fotphg5pwnAD4rkLXnAMmDa7eFvVYaNHq5Gc9b5v2NTVzd4g198fAQKbKW3ewFiT5m?cluster=devnet) | **1 `MarketClosed`** | 1 → 2 |
+
+Probe 3 is the plain closed-session probe: `Program log: refused code=1 at=1790110083`, a `Refused`
+event carrying code 1, `refusals` 0 → 1, and `last_refusal_ts 1790110083` — a unix timestamp one
+second after the chain clock the script read, which is exactly what the superseded account could no
+longer produce.
+
+Probe 4 was `probe.ts --open` run outside the session deliberately, and is recorded as mode
+`open-forced`, not `open`. Hermes publishes `Equity.US.AAPL/USD` around the clock, so a real update
+was fetched, posted through the receiver with full Wormhole guardian verification, and read by
+`sync_security` in the same transaction: `SecuritySynced` carries `price 33987500 expo -5 publish_ts
+1790110149`, and `SecurityState.primary` holds it. `probe_security`, in that same transaction, still
+refused with code 1 — the committed calendar decides before any oracle is read, which is the
+ordering `gate::check_actionable` implements. It demonstrates that ordering. It is not a substitute
+for an in-session probe and it does not produce code 9.
+
+**Not yet run: an in-session probe on the post-audit build.** The only `SingleSource` (9) refusal on
+record is probe 1, from the pre-audit build and against the superseded SecurityState. Reproducing it
+needs a regular session — 13:30 to 20:00 UTC on a weekday the committed calendar does not mark
+closed — and the market was already shut when the accounts were recreated. The exact command is:
+
+```bash
+cd scripts/devnet && pnpm run probe:open
+```
+
+It is listed in `deployment.json` under `probesPending` with its expected code, so the gap sits in
+the record and not only in this paragraph.
+
+Recreating the accounts and sending probes 3 and 4 cost 0.014066260 SOL (wallet 8.842865767, then
+8.828799507). No mainnet transaction was sent.

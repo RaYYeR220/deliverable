@@ -2,6 +2,7 @@
 // single declared source.
 //
 //   pnpm tsx register.ts
+//   pnpm tsx register.ts --calendar-id=1 --mint=<pubkey>
 //
 // Devnet has no second, independently sourced AAPL price (no Kamino Scope
 // account), so the binding is `OracleBinding::SingleDeclared`. That is spelled
@@ -17,9 +18,11 @@ import {
   DEFAULT_MAX_DIVERGENCE_BPS,
   DEFAULT_MAX_PRICE_AGE_SECS,
   PYTH_OUTER_MAX_AGE_SECS,
-  US_EQUITY_CALENDAR_ID,
+  calendarId,
+  calendarPda,
   connection,
   explorer,
+  option,
   readDeployment,
   recordField,
   registerSecurityIx,
@@ -33,12 +36,18 @@ async function main() {
   const conn = connection();
   const payer = wallet();
   const d = readDeployment();
-  if (typeof d.standinMint !== 'string') throw new Error('run create-standin-mint.ts first');
-  const mint = new PublicKey(d.standinMint);
+  const recorded = option('mint') ?? d.standinMint;
+  if (typeof recorded !== 'string') throw new Error('run create-standin-mint.ts first, or pass --mint=<pubkey>');
+  const mint = new PublicKey(recorded);
+  const id = calendarId();
   const security = securityPda(mint);
   console.log(`rpc      ${rpcHost()}`);
   console.log(`mint     ${mint.toBase58()} (AAPLx devnet stand-in)`);
+  console.log(`calendar ${id} ${calendarPda(id).toBase58()}`);
   console.log(`security ${security.toBase58()}`);
+  if (!(await conn.getAccountInfo(calendarPda(id)))) {
+    throw new Error(`calendar ${id} does not exist; run init.ts --calendar-id=${id} first`);
+  }
 
   recordField('security', security.toBase58());
   recordField('binding', {
@@ -56,12 +65,12 @@ async function main() {
 
   await send(
     conn,
-    'register_security',
+    `register_security (calendar ${id})`,
     [
       registerSecurityIx({
         authority: payer.publicKey,
         mint,
-        calendarId: US_EQUITY_CALENDAR_ID,
+        calendarId: id,
         symbol: 'AAPLd',
         sources: {
           kind: 'SingleDeclared',

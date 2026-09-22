@@ -11,9 +11,13 @@
   "scripts": {
     "init": "tsx init.ts",
     "mint": "tsx create-standin-mint.ts",
+    "mint:new": "tsx create-standin-mint.ts --new-mint",
     "register": "tsx register.ts",
     "probe": "tsx probe.ts",
-    "read": "tsx read.ts"
+    "probe:open": "tsx probe.ts --open",
+    "probe:closed": "tsx probe.ts --closed",
+    "read": "tsx read.ts",
+    "recreate": "tsx init.ts && tsx create-standin-mint.ts --new-mint && tsx register.ts"
   },
   "dependencies": {
     "@pythnetwork/hermes-client": "3.1.0",

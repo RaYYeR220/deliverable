@@ -2,84 +2,343 @@
   "cluster": "devnet",
   "programId": "DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa",
   "deploy": {
-    "command": "solana program deploy target/deploy/deliverable.so --program-id target/deploy/deliverable-keypair.json --buffer <buffer-keypair> --use-rpc --max-sign-attempts 100 --with-compute-unit-price 10000 --url <devnet>",
-    "build": "anchor build --tools-version v1.52 --arch v0",
-    "soBytes": 428928,
-    "soSha256": "93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41",
-    "onchainDumpSha256": "93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41",
-    "signature": "9CFe4pXu8WMq7KpMDG17hV5kM7TWe8r7HiD43j1Ca3hFcqRQMji5VtzY46nVpBd3PKenMaqty5BQpeXwYAQkLkP",
-    "slot": 502514997,
+    "build": "post-audit",
+    "note": "The build on chain now. It is the upgrade of 2026-09-22 20:28:23 UTC, not the original deploy; the original is under history.initialDeploy and every artifact produced before this signature belongs to that build, not this one.",
+    "command": "solana program extend DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCaa 40000 --url <devnet> && solana program deploy target/deploy/deliverable.so --program-id target/deploy/deliverable-keypair.json --buffer <buffer-keypair> --use-rpc --max-sign-attempts 100 --with-compute-unit-price 10000 --url <devnet>",
+    "build_command": "anchor build --tools-version v1.52 --arch v0",
+    "soBytes": 458040,
+    "soSha256": "53d5da025a9eae4d89abc2faac136721995eaff5280131326e9d9f7b6014d572",
+    "onchainDumpSha256": "53d5da025a9eae4d89abc2faac136721995eaff5280131326e9d9f7b6014d572",
+    "onchainDumpNote": "sha256 of the first 458040 bytes of `solana program dump`; the trailing 10888 bytes are zero padding left by `program extend`.",
+    "signature": "4BJc4e6Fgt5tUqwpqdKXpgFinArYXSHpa3P4s6LDT7T3FtWSFqxX5qvUbw5My2KzMYegv2WShvawh7kbQs47fMmA",
+    "slot": 502597992,
+    "blockTime": 1790108903,
     "programData": "7BWNhWUjQgKn9ZBAWiyUcyriYrYz8Y8vy7q8NJ4JR2Mi",
+    "programDataBytes": 468973,
     "upgradeAuthority": "4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo",
-    "walletLamportsBefore": 11246332597,
-    "walletLamportsAfter": 9062904269,
-    "lamportsSpent": 2183428328,
-    "programDataRentLamports": 2179833080,
-    "programAccountRentLamports": 833120,
-    "note": "The first attempt without --buffer failed mid-write (Data writes to account failed: Max retries exceeded); its buffer was closed and the rent recovered, costing 495000 lamports in fees. Included in lamportsSpent."
+    "layoutChanges": [
+      "SecurityState: HaltState gained `lifted_ts: i64`, so 8 + INIT_SPACE went from 321 to 329 bytes and every field from `halt` onward moved eight bytes.",
+      "MarketCalendar: CalendarEntry.date_key went from u16 (MMDD) to u32 ((year << 16) | (month << 8) | day), so an entry is 7 bytes rather than 5 and 8 + INIT_SPACE went from 373 to 501 bytes.",
+      "Registry: unchanged at 74 bytes, reused."
+    ]
   },
+  "registry": "DiK3Y7ZCK7n1ftXXQ6fboChc6MiiVhJdTu6GxCJf36Ls",
+  "attestor": "J1uaVh6BAendk4hWRnZhNadWKsypa9uT4o8swqTJv5Tu",
+  "authority": "4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo",
   "transactions": [
     {
-      "label": "init_registry",
-      "signature": "39oAup6YT18KApkUURkbjzQpawMp8FvjfzesfJyrQ33SLvrtuFGFzk6yTBVXeBdvKdDXPTZHdvP2ypcaj3jdcf6R",
-      "slot": 502516936,
-      "blockTime": 1790095465
+      "label": "init_calendar(1)",
+      "signature": "5gXTEMvjjUSxnW49rmLFDEqfgojgpzpKb4vGQ2AYMZp29TRMJgQ2jgzNifMQGnFbEhs4QGNewa7uDfTAtHPFSH4S",
+      "slot": 502604790,
+      "blockTime": 1790110031
     },
     {
-      "label": "init_calendar",
-      "signature": "3LnaPtkxwjgXdiKJqHw2abcTv7Ue9PdFGeXmt4HrvASGSew2fLe4Fnrf7BXwmf6KNM73EkVxvzUmR1D39YCJgLW9",
-      "slot": 502516943,
-      "blockTime": 1790095467
+      "label": "append_calendar_entries(1)",
+      "signature": "3d3Kf6fSxr4ZZPRvBjQZkXCkdizZxyQRXoRrDTrgRNoHR5PAyjNkDzTiL7MDGTR856xKsMbJpLP27JAjLdMXmrZV",
+      "slot": 502604796,
+      "blockTime": 1790110032
     },
     {
-      "label": "append_calendar_entries",
-      "signature": "4zS5NwHnhVgBQZy4UrQh3iqfQQmXN6mgH6AHN4yFqrfwDvbAGiLwxSk8zj59AyMqSgNrfYMJf9tyg9qvY7hBY4U9",
-      "slot": 502516948,
-      "blockTime": 1790095467
+      "label": "create_standin_mint (keys/standin-mint-2.json)",
+      "signature": "CTTig4ZSZvkuUkqHg3bM1yAvqWhPRxnuNZY3j5ZMVMhyUY9fNX8XRDDzMEto4ntoMgqNWXtLQf1RJCktXG8sKuK",
+      "slot": 502604884,
+      "blockTime": 1790110047
     },
     {
-      "label": "create_standin_mint",
-      "signature": "DYATy4kzM5JAZ6LEiopUJbYi6NFRfAzRozdDVKuKArPaBiG3rsdeek5qPWb71i5EfPcJmp5ef9VFRsGQLgcDZJ4",
-      "slot": 502517384,
-      "blockTime": 1790095539
+      "label": "standin_mint_metadata (keys/standin-mint-2.json)",
+      "signature": "2MWdo4gK2xgaeoTaKGxgiqpAGycekrvAzpdutViusrLoHWAqqkLapHzhSMoroXnj3tbkhgfj5DKZ1hXkMqFPugZJ",
+      "slot": 502604893,
+      "blockTime": 1790110048
     },
     {
-      "label": "standin_mint_metadata",
-      "signature": "3MBnpNE3kuHBu3A3E4Rjc7rT2ea8jBz6rhRNNCjoNhGkarJ1whxkYFhYHE1aVZBRfAQxb1JhJiMJFcYH2NJpzH3U",
-      "slot": 502517392,
-      "blockTime": 1790095541
-    },
-    {
-      "label": "register_security",
-      "signature": "2pxKXtjZNqS4hiT5oHpmoBrYHAXHYkZGPqtJaunUXQMsEt7sW7sYYmXhhZ5bn6YwK4Bh6wiPxaYMMuT3DB9e7Gvn",
-      "slot": 502517597,
-      "blockTime": 1790095575
-    },
-    {
-      "label": "probe(open): wormhole encoded VAA (init, write, verify) [1/2]",
-      "signature": "5tb3KoaZoNLNKDM6YKaAWTwpwDFjFk3EmkGtuyyAeGM7vinpRe3Jkbe9kX3kydhhyT5WcSjGyt6WiheRWxQjVMjQ",
-      "slot": 502518356,
-      "blockTime": 1790095701
-    },
-    {
-      "label": "probe(open): pyth post_update + sync_security + probe_security [2/2]",
-      "signature": "3oVqe7QsoC6jLAHSzfXcr66nMgzSEaUrgWjvsEpxktSjMUxjA9BVe7ZUKrqz6AUpUT4TNb6cjJ2etWMeTFA7AukR",
-      "slot": 502518364,
-      "blockTime": 1790095703
+      "label": "register_security (calendar 1)",
+      "signature": "3S8HMib7dRN5yAkDLuSUvKNvaeQGS9P9ZuhdD8dcQJfkit8Gm2hPdZMtWDYB2S31UE8Zcq955GcupxZv4FUMTYGM",
+      "slot": 502604958,
+      "blockTime": 1790110059
     },
     {
       "label": "probe(closed): probe_security",
-      "signature": "3CiUJerrvQ4BmWmPXubrerXHtcpv1qw1xWcXrwrs5vFoz6GWp2xZcRzwLXCfGN5W39QC1gs1qCXs2J6kcwHPCHHC",
-      "slot": 502588330,
-      "blockTime": 1790107298
+      "signature": "21eS3A1F1uPVJdxCaDwqFVpKtEdbqex7F4pZibTGfxiUDMxQmsbAHVmAmXX6duX1rMJGFLpNritKna1fT7ZpkLvo",
+      "slot": 502605101,
+      "blockTime": 1790110083
+    },
+    {
+      "label": "probe(open): wormhole encoded VAA (init, write, verify) [1/2]",
+      "signature": "2PVf6ozW9WRenFnjonzsgSoENFdn8HrNW56iGVUKCWcmaTisd2KLupjwTV7d7GYBWU6vgUbwgnzP8tcmAupCS9o5",
+      "slot": 502605505,
+      "blockTime": 1790110150
+    },
+    {
+      "label": "probe(open): pyth post_update + sync_security + probe_security [2/2]",
+      "signature": "58zz5LEFx8B8zZosMpF4L5fotphg5pwnAD4rkLXnAMmDa7eFvVYaNHq5Gc9b5v2NTVzd4g198fAQKbKW3ewFiT5m",
+      "slot": 502605517,
+      "blockTime": 1790110152
     }
   ],
-  "registry": "DiK3Y7ZCK7n1ftXXQ6fboChc6MiiVhJdTu6GxCJf36Ls",
-  "calendar": "GcsF2uRFUydCCFEU1nDDr7NYj19iisojcshgzk1btNAF",
-  "attestor": "J1uaVh6BAendk4hWRnZhNadWKsypa9uT4o8swqTJv5Tu",
-  "authority": "4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo",
-  "standinMint": "8AWMhkJ61ifBkkKsXMNYoCb8HmthjRaQk5kjBMCQjq32",
-  "security": "4d8cqHM7UZgJnqbifntNa8GkLnpL89UPPpj2a3WUJ2fT",
+  "probes": [
+    {
+      "mode": "closed",
+      "code": 1,
+      "signatures": [
+        {
+          "label": "probe_security",
+          "signature": "21eS3A1F1uPVJdxCaDwqFVpKtEdbqex7F4pZibTGfxiUDMxQmsbAHVmAmXX6duX1rMJGFLpNritKna1fT7ZpkLvo"
+        }
+      ],
+      "oracleSlot": "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9",
+      "build": "53d5da025a9eae4d89abc2faac136721995eaff5280131326e9d9f7b6014d572",
+      "calendarId": 1,
+      "security": "8S5KCJx8z8tcF2jRYmbiUaTi1QsLQXYZ3yFzZbK9QPxS",
+      "session": "Closed",
+      "chainClock": 1790110082,
+      "refusalsBefore": 0,
+      "refusalsAfter": 1,
+      "lastRefusalCode": 1,
+      "lastRefusalTs": "1790110083"
+    },
+    {
+      "mode": "open-forced",
+      "code": 1,
+      "signatures": [
+        {
+          "label": "wormhole encoded VAA (init, write, verify) [1/2]",
+          "signature": "2PVf6ozW9WRenFnjonzsgSoENFdn8HrNW56iGVUKCWcmaTisd2KLupjwTV7d7GYBWU6vgUbwgnzP8tcmAupCS9o5",
+          "createdAccounts": [
+            "25uJCd9idPg21odbrkfv2HNg6pzx6doQYC4tAYwhF4af"
+          ]
+        },
+        {
+          "label": "pyth post_update + sync_security + probe_security [2/2]",
+          "signature": "58zz5LEFx8B8zZosMpF4L5fotphg5pwnAD4rkLXnAMmDa7eFvVYaNHq5Gc9b5v2NTVzd4g198fAQKbKW3ewFiT5m",
+          "createdAccounts": [
+            "ZDUNVSKbJaoQXGcD8Dq1azvMAJeHMAshJSo1hJCxdfv"
+          ]
+        }
+      ],
+      "priceUpdateAccount": "ZDUNVSKbJaoQXGcD8Dq1azvMAJeHMAshJSo1hJCxdfv",
+      "hermes": {
+        "price": "33987500",
+        "conf": "10365",
+        "expo": -5,
+        "publishTime": 1790110149
+      },
+      "onchainUpdate": {
+        "verificationLevel": "Full",
+        "price": "33987500",
+        "conf": "10365",
+        "exponent": -5,
+        "publishTime": "1790110149",
+        "postedSlot": "502605517"
+      },
+      "build": "53d5da025a9eae4d89abc2faac136721995eaff5280131326e9d9f7b6014d572",
+      "calendarId": 1,
+      "security": "8S5KCJx8z8tcF2jRYmbiUaTi1QsLQXYZ3yFzZbK9QPxS",
+      "session": "Closed",
+      "chainClock": 1790110148,
+      "refusalsBefore": 1,
+      "refusalsAfter": 2,
+      "lastRefusalCode": 1,
+      "lastRefusalTs": "1790110152",
+      "note": "`probe.ts --open` run while the market was shut. A real Hermes update was posted through the Pyth receiver with full Wormhole verification and read by `sync_security` in the same transaction, so `SecurityState.primary` carries it; `probe_security` still refused MarketClosed, because the committed calendar decides before any oracle is read. It is not a substitute for an in-session probe and does not produce code 9."
+    }
+  ],
+  "probesPending": [
+    {
+      "mode": "open",
+      "expectedCode": 9,
+      "expectedCodeName": "SingleSource",
+      "window": "13:30 to 20:00 UTC on a weekday the committed calendar does not mark closed (09:30 to 16:00 America/New_York while New York is on EDT)",
+      "command": "cd scripts/devnet && pnpm probe:open",
+      "note": "Not yet run against the post-audit build. The last in-session probe on record is the pre-audit one under history.preAuditProbes, against the superseded security 4d8cqHM7UZgJnqbifntNa8GkLnpL89UPPpj2a3WUJ2fT."
+    }
+  ],
+  "history": {
+    "note": "Kept as sent. Everything in this block was produced by the pre-audit build 93160d0f and by the state accounts allocated under that build's layouts. None of it is evidence about the build on chain now.",
+    "initialDeploy": {
+      "build": "pre-audit",
+      "command": "solana program deploy target/deploy/deliverable.so --program-id target/deploy/deliverable-keypair.json --buffer <buffer-keypair> --use-rpc --max-sign-attempts 100 --with-compute-unit-price 10000 --url <devnet>",
+      "build_command": "anchor build --tools-version v1.52 --arch v0",
+      "soBytes": 428928,
+      "soSha256": "93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41",
+      "onchainDumpSha256": "93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41",
+      "signature": "9CFe4pXu8WMq7KpMDG17hV5kM7TWe8r7HiD43j1Ca3hFcqRQMji5VtzY46nVpBd3PKenMaqty5BQpeXwYAQkLkP",
+      "slot": 502514997,
+      "programData": "7BWNhWUjQgKn9ZBAWiyUcyriYrYz8Y8vy7q8NJ4JR2Mi",
+      "upgradeAuthority": "4EtAFmWtCzMxyUku7NofttEPLDWniigFAEL7KmCeCYKo",
+      "walletLamportsBefore": 11246332597,
+      "walletLamportsAfter": 9062904269,
+      "lamportsSpent": 2183428328,
+      "programDataRentLamports": 2179833080,
+      "programAccountRentLamports": 833120,
+      "note": "The first attempt without --buffer failed mid-write (Data writes to account failed: Max retries exceeded); its buffer was closed and the rent recovered, costing 495000 lamports in fees. Included in lamportsSpent."
+    },
+    "preAuditAccounts": {
+      "note": "Live accounts, superseded rather than closed: this program has no instruction that closes a PDA. Calendar 0 holds 12 five-byte MMDD entries that the current build reads at the wrong offsets, and SecurityState 4d8c... is 321 bytes where the current layout needs 329.",
+      "calendarId": 0,
+      "calendar": "GcsF2uRFUydCCFEU1nDDr7NYj19iisojcshgzk1btNAF",
+      "standinMint": "8AWMhkJ61ifBkkKsXMNYoCb8HmthjRaQk5kjBMCQjq32",
+      "standinMintKey": "standin-mint",
+      "security": "4d8cqHM7UZgJnqbifntNa8GkLnpL89UPPpj2a3WUJ2fT",
+      "transactions": [
+        {
+          "label": "init_registry",
+          "signature": "39oAup6YT18KApkUURkbjzQpawMp8FvjfzesfJyrQ33SLvrtuFGFzk6yTBVXeBdvKdDXPTZHdvP2ypcaj3jdcf6R",
+          "slot": 502516936,
+          "blockTime": 1790095465
+        },
+        {
+          "label": "init_calendar",
+          "signature": "3LnaPtkxwjgXdiKJqHw2abcTv7Ue9PdFGeXmt4HrvASGSew2fLe4Fnrf7BXwmf6KNM73EkVxvzUmR1D39YCJgLW9",
+          "slot": 502516943,
+          "blockTime": 1790095467
+        },
+        {
+          "label": "append_calendar_entries",
+          "signature": "4zS5NwHnhVgBQZy4UrQh3iqfQQmXN6mgH6AHN4yFqrfwDvbAGiLwxSk8zj59AyMqSgNrfYMJf9tyg9qvY7hBY4U9",
+          "slot": 502516948,
+          "blockTime": 1790095467
+        },
+        {
+          "label": "create_standin_mint",
+          "signature": "DYATy4kzM5JAZ6LEiopUJbYi6NFRfAzRozdDVKuKArPaBiG3rsdeek5qPWb71i5EfPcJmp5ef9VFRsGQLgcDZJ4",
+          "slot": 502517384,
+          "blockTime": 1790095539
+        },
+        {
+          "label": "standin_mint_metadata",
+          "signature": "3MBnpNE3kuHBu3A3E4Rjc7rT2ea8jBz6rhRNNCjoNhGkarJ1whxkYFhYHE1aVZBRfAQxb1JhJiMJFcYH2NJpzH3U",
+          "slot": 502517392,
+          "blockTime": 1790095541
+        },
+        {
+          "label": "register_security",
+          "signature": "2pxKXtjZNqS4hiT5oHpmoBrYHAXHYkZGPqtJaunUXQMsEt7sW7sYYmXhhZ5bn6YwK4Bh6wiPxaYMMuT3DB9e7Gvn",
+          "slot": 502517597,
+          "blockTime": 1790095575
+        },
+        {
+          "label": "probe(open): wormhole encoded VAA (init, write, verify) [1/2]",
+          "signature": "5tb3KoaZoNLNKDM6YKaAWTwpwDFjFk3EmkGtuyyAeGM7vinpRe3Jkbe9kX3kydhhyT5WcSjGyt6WiheRWxQjVMjQ",
+          "slot": 502518356,
+          "blockTime": 1790095701
+        },
+        {
+          "label": "probe(open): pyth post_update + sync_security + probe_security [2/2]",
+          "signature": "3oVqe7QsoC6jLAHSzfXcr66nMgzSEaUrgWjvsEpxktSjMUxjA9BVe7ZUKrqz6AUpUT4TNb6cjJ2etWMeTFA7AukR",
+          "slot": 502518364,
+          "blockTime": 1790095703
+        },
+        {
+          "label": "probe(closed): probe_security",
+          "signature": "3CiUJerrvQ4BmWmPXubrerXHtcpv1qw1xWcXrwrs5vFoz6GWp2xZcRzwLXCfGN5W39QC1gs1qCXs2J6kcwHPCHHC",
+          "slot": 502588330,
+          "blockTime": 1790107298
+        },
+        {
+          "label": "probe(closed, straddles the upgrade): probe_security",
+          "signature": "2pycKz93c6ctvRBLiiVLBfqg6FxEr7A8r5jMFq6XAvaeCbx7b6GtUbRbNGqiMgqmn1DBUWkuv8CsrPqfQsTbKad9",
+          "slot": 502598369,
+          "blockTime": 1790108966
+        }
+      ],
+      "binding": {
+        "kind": "SingleDeclared",
+        "primary": {
+          "kind": "Pyth",
+          "feed": "Equity.US.AAPL/USD",
+          "feedId": "0x49f6b65cb1de6b10eaf75e7c03ca029c306d0357e91b5311b175084a5ad55688",
+          "maxAge": 3600
+        },
+        "maxPriceAge": 60,
+        "maxConfBps": 100,
+        "maxDivergenceBps": 150
+      }
+    },
+    "preAuditProbes": [
+      {
+        "build": "93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41",
+        "mode": "open",
+        "code": 9,
+        "signatures": [
+          {
+            "label": "wormhole encoded VAA (init, write, verify) [1/2]",
+            "signature": "5tb3KoaZoNLNKDM6YKaAWTwpwDFjFk3EmkGtuyyAeGM7vinpRe3Jkbe9kX3kydhhyT5WcSjGyt6WiheRWxQjVMjQ",
+            "createdAccounts": [
+              "HgDKQvNGjS7NDTw7yiyJz4eSMS1LC2dkJ5Zex4utKPZM"
+            ]
+          },
+          {
+            "label": "pyth post_update + sync_security + probe_security [2/2]",
+            "signature": "3oVqe7QsoC6jLAHSzfXcr66nMgzSEaUrgWjvsEpxktSjMUxjA9BVe7ZUKrqz6AUpUT4TNb6cjJ2etWMeTFA7AukR",
+            "createdAccounts": [
+              "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9"
+            ]
+          }
+        ],
+        "priceUpdateAccount": "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9",
+        "hermes": {
+          "price": "34243997",
+          "conf": "2997",
+          "expo": -5,
+          "publishTime": 1790095701
+        },
+        "onchainUpdate": {
+          "verificationLevel": "Full",
+          "price": "34243997",
+          "conf": "2997",
+          "exponent": -5,
+          "publishTime": "1790095701",
+          "postedSlot": "502518364"
+        },
+        "session": "Regular",
+        "chainClock": 1790095700,
+        "refusalsAfter": 1,
+        "lastRefusalCode": 9,
+        "lastRefusalTs": "1790095703"
+      },
+      {
+        "build": "93160d0fa7fe163a663c503300cd0b6b077b8d7895b8225e39d9291612521b41",
+        "mode": "closed",
+        "code": 1,
+        "signatures": [
+          {
+            "label": "probe_security",
+            "signature": "3CiUJerrvQ4BmWmPXubrerXHtcpv1qw1xWcXrwrs5vFoz6GWp2xZcRzwLXCfGN5W39QC1gs1qCXs2J6kcwHPCHHC"
+          }
+        ],
+        "oracleSlot": "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9",
+        "session": "Closed",
+        "chainClock": 1790107297,
+        "refusalsAfter": 2,
+        "lastRefusalCode": 1,
+        "lastRefusalTs": "1790107298"
+      },
+      {
+        "build": "mixed: sent at 20:29:26 UTC against the post-audit binary, on a SecurityState allocated by the pre-audit one",
+        "mode": "closed",
+        "code": 1,
+        "signatures": [
+          {
+            "label": "probe_security",
+            "signature": "2pycKz93c6ctvRBLiiVLBfqg6FxEr7A8r5jMFq6XAvaeCbx7b6GtUbRbNGqiMgqmn1DBUWkuv8CsrPqfQsTbKad9"
+          }
+        ],
+        "oracleSlot": "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9",
+        "session": "Closed",
+        "chainClock": 1790108965,
+        "refusalsAfter": 2,
+        "lastRefusalCode": 1,
+        "lastRefusalTs": "72057595844812450",
+        "invalid": true,
+        "invalidNote": "Not a usable reading. The transaction confirmed and the Refused event really does carry code 1, but the program deserialised a 321-byte account into the 329-byte layout: it read the gate tolerances out of the wrong bytes (max_price_age 150, max_conf_bps 2, max_divergence_bps 3000934913) and wrote refusals and last_refusal_ts eight bytes past where a pre-audit reader looks. refusalsAfter 2 and lastRefusalTs 72057595844812450 are both artefacts of that mismatch."
+      }
+    ]
+  },
+  "calendarId": 1,
+  "calendar": "tKVYAdK5euUqmZQC8PfMPprsFwrxy831MCGa3DUBnpe",
+  "standinMintKey": "standin-mint-2",
+  "standinMint": "BrASykYaPBCM6S7NQNeq6kbKKRGF5QgDw2rENPfQuEz3",
+  "security": "8S5KCJx8z8tcF2jRYmbiUaTi1QsLQXYZ3yFzZbK9QPxS",
   "binding": {
     "kind": "SingleDeclared",
     "primary": {
@@ -91,63 +350,5 @@
     "maxPriceAge": 60,
     "maxConfBps": 100,
     "maxDivergenceBps": 150
-  },
-  "probes": [
-    {
-      "mode": "open",
-      "code": 9,
-      "signatures": [
-        {
-          "label": "wormhole encoded VAA (init, write, verify) [1/2]",
-          "signature": "5tb3KoaZoNLNKDM6YKaAWTwpwDFjFk3EmkGtuyyAeGM7vinpRe3Jkbe9kX3kydhhyT5WcSjGyt6WiheRWxQjVMjQ",
-          "createdAccounts": [
-            "HgDKQvNGjS7NDTw7yiyJz4eSMS1LC2dkJ5Zex4utKPZM"
-          ]
-        },
-        {
-          "label": "pyth post_update + sync_security + probe_security [2/2]",
-          "signature": "3oVqe7QsoC6jLAHSzfXcr66nMgzSEaUrgWjvsEpxktSjMUxjA9BVe7ZUKrqz6AUpUT4TNb6cjJ2etWMeTFA7AukR",
-          "createdAccounts": [
-            "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9"
-          ]
-        }
-      ],
-      "priceUpdateAccount": "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9",
-      "hermes": {
-        "price": "34243997",
-        "conf": "2997",
-        "expo": -5,
-        "publishTime": 1790095701
-      },
-      "onchainUpdate": {
-        "verificationLevel": "Full",
-        "price": "34243997",
-        "conf": "2997",
-        "exponent": -5,
-        "publishTime": "1790095701",
-        "postedSlot": "502518364"
-      },
-      "session": "Regular",
-      "chainClock": 1790095700,
-      "refusalsAfter": 1,
-      "lastRefusalCode": 9,
-      "lastRefusalTs": "1790095703"
-    },
-    {
-      "mode": "closed",
-      "code": 1,
-      "signatures": [
-        {
-          "label": "probe_security",
-          "signature": "3CiUJerrvQ4BmWmPXubrerXHtcpv1qw1xWcXrwrs5vFoz6GWp2xZcRzwLXCfGN5W39QC1gs1qCXs2J6kcwHPCHHC"
-        }
-      ],
-      "oracleSlot": "9YWnGvx5uABEhmDVeKviaFb6wu8ruX5eBRdCo3Gbi6N9",
-      "session": "Closed",
-      "chainClock": 1790107297,
-      "refusalsAfter": 2,
-      "lastRefusalCode": 1,
-      "lastRefusalTs": "1790107298"
-    }
-  ]
+  }
 }

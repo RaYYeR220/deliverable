@@ -160,6 +160,35 @@ than in a footnote — and because two of the three keys are ours.
   issuer still moves the number and we still price against it — that is the trust assumption, and
   it is the same one the whole design rests on.
 
+## State outlives code, and ours did
+
+This is the project's own thesis turned on the project. On 2026-09-22 the devnet program was
+upgraded to carry the audit fixes. Two account layouts changed with it — `HaltState` gained a field,
+and the calendar's `date_key` widened from `u16` to `u32` — and **the accounts already on chain did
+not change with them.** Anchor accounts are bytes at a fixed size; an upgrade rewrites the code and
+leaves the state where it is.
+
+The consequences were not cosmetic. The `SecurityState` was eight bytes short of the new layout, so
+the new build read a halt timestamp out of two old tolerance fields and ran the gate with a
+divergence bound of 3,000,934,913 basis points. The calendar was 373 bytes where the new layout
+needs 501, so **every one of its holiday exceptions decoded as a date that cannot occur, and the
+calendar silently behaved as though no holiday existed**. A refusal counter that appeared not to
+increment was the visible symptom; those were the causes.
+
+Both accounts were replaced under new seeds — calendar id 1, and a new stand-in mint, since a PDA
+cannot be closed without an instruction to close it, and the program has none. That leaves two
+things true that we will not paper over:
+
+- **The pre-upgrade accounts still exist and are still callable.** `probe_security` against the old
+  `SecurityState` will return a confirmed transaction computed from garbage tolerances, and the old
+  calendar still reads as having no holidays. Roughly 0.0048 SOL of rent is stranded in them
+  permanently.
+- **Refusals recorded before the upgrade belong to a different binary.** `PROOF.md` labels them that
+  way rather than presenting them as the current program's work.
+
+`scripts/devnet/lib.ts` now checks every account's length against `8 + INIT_SPACE` before decoding
+it, which is the check that would have caught this at the first read instead of the third symptom.
+
 ## Known upstream risks we do not control
 
 - **The issuer can freeze or pause.** xStocks carry `PermanentDelegate` and `Pausable`, both held by

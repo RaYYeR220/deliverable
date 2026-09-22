@@ -1,8 +1,9 @@
 // Step 4: ask the gate for its verdict on devnet, against a real Pyth update.
 //
-//   pnpm tsx probe.ts            # picks the mode from the chain clock
-//   pnpm tsx probe.ts --open     # force the in-session flow
-//   pnpm tsx probe.ts --closed   # force the closed-session flow
+//   pnpm tsx probe.ts                 # picks the mode from the chain clock
+//   pnpm tsx probe.ts --open          # force the in-session flow
+//   pnpm tsx probe.ts --closed        # force the closed-session flow
+//   pnpm tsx probe.ts --calendar-id=1 # against a specific calendar
 //
 // In session: fetch the latest Equity.US.AAPL/USD update from Hermes (API key
 // from PYTH_API_KEY, sent as a Bearer token), post it through the Pyth Solana
@@ -35,9 +36,10 @@ import {
   PYTH_API_KEY,
   PYTH_RECEIVER,
   REFUSAL_NAMES,
-  US_EQUITY_CALENDAR_ID,
+  calendarId,
   calendarPda,
   connection,
+  dateKey,
   decodeCalendar,
   decodePriceUpdateV2,
   decodeSecurityState,
@@ -88,8 +90,8 @@ function sessionAt(cal: ReturnType<typeof decodeCalendar>, ts: number): 'Regular
   const days = Math.floor(local / DAY);
   const wd = (((days + 4) % 7) + 7) % 7;
   if (wd === 0 || wd === 6) return 'Closed';
-  const [, m, d] = civilFromDays(days);
-  const entry = cal.entries.find((e) => e.dateKey === ((m << 8) | d));
+  const [y, m, d] = civilFromDays(days);
+  const entry = cal.entries.find((e) => e.dateKey === dateKey(y, m, d));
   if (entry && entry.kind === 0) return 'Closed';
   const close = entry ? entry.closeMinute : cal.regularCloseMinute;
   const minute = Math.floor((((local % DAY) + DAY) % DAY) / 60);
@@ -133,6 +135,18 @@ async function readSecurity(conn: Connection, mint: PublicKey) {
   return decodeSecurityState((await conn.getAccountInfo(securityPda(mint)))!.data);
 }
 
+/**
+ * The last `PriceUpdateV2` any probe posted, current build or the one before
+ * it. A closed-market probe passes an oracle account the program never reads,
+ * and posting a fresh update just to leave it unread would cost a Wormhole
+ * verification for nothing.
+ */
+function lastPriceUpdate(d: ReturnType<typeof readDeployment>): string | undefined {
+  const history = (d.history as { preAuditProbes?: { priceUpdateAccount?: string }[] } | undefined)?.preAuditProbes ?? [];
+  const probes = (d.probes as { priceUpdateAccount?: string }[] | undefined) ?? [];
+  return [...history, ...probes].reverse().find((p) => p.priceUpdateAccount)?.priceUpdateAccount;
+}
+
 function printVerdict(logs: string[]) {
   const events = parseEvents(logs);
   for (const e of events) {
@@ -151,7 +165,7 @@ function printVerdict(logs: string[]) {
 
 // --- flows --------------------------------------------------------------------
 
-async function inSession(conn: Connection, payer: Keypair, mint: PublicKey) {
+async function inSession(conn: Connection, payer: Keypair, mint: PublicKey, id: number) {
   if (!PYTH_API_KEY) throw new Error('PYTH_API_KEY is not set (repo .env or environment)');
   const hermes = new HermesClient(HERMES_URL, { accessToken: PYTH_API_KEY });
   const update = await hermes.getLatestPriceUpdates([AAPL_FEED], { encoding: 'base64', parsed: true });
@@ -171,7 +185,7 @@ async function inSession(conn: Connection, payer: Keypair, mint: PublicKey) {
   await builder.addPriceConsumerInstructions(async (getPriceUpdateAccount) => [
     { instruction: syncSecurityIx(mint, getPriceUpdateAccount(AAPL_FEED)), signers: [], computeUnits: 120_000 },
     {
-      instruction: probeSecurityIx(mint, US_EQUITY_CALENDAR_ID, getPriceUpdateAccount(AAPL_FEED)),
+      instruction: probeSecurityIx(mint, id, getPriceUpdateAccount(AAPL_FEED)),
       signers: [],
       computeUnits: 120_000,
     },
@@ -222,12 +236,12 @@ async function inSession(conn: Connection, payer: Keypair, mint: PublicKey) {
   };
 }
 
-async function closedSession(conn: Connection, payer: Keypair, mint: PublicKey, oracle: PublicKey) {
+async function closedSession(conn: Connection, payer: Keypair, mint: PublicKey, id: number, oracle: PublicKey) {
   console.log(`oracle slot: ${oracle.toBase58()} (passed, never read on a closed market)`);
   const { signature, logs } = await send(
     conn,
     'probe(closed): probe_security',
-    [probeSecurityIx(mint, US_EQUITY_CALENDAR_ID, oracle)],
+    [probeSecurityIx(mint, id, oracle)],
     [payer],
   );
   const code = printVerdict(logs);
@@ -240,27 +254,37 @@ async function main() {
   const d = readDeployment();
   if (typeof d.standinMint !== 'string') throw new Error('run create-standin-mint.ts first');
   const mint = new PublicKey(d.standinMint);
-  const cal = decodeCalendar((await conn.getAccountInfo(calendarPda(US_EQUITY_CALENDAR_ID)))!.data);
+  const id = calendarId();
+  const calendarAccount = await conn.getAccountInfo(calendarPda(id));
+  if (!calendarAccount) throw new Error(`calendar ${id} does not exist; run init.ts --calendar-id=${id} first`);
+  const cal = decodeCalendar(calendarAccount.data);
 
   const clock = await chainClock(conn);
   const session = sessionAt(cal, clock);
   const forced = process.argv.includes('--open') ? 'open' : process.argv.includes('--closed') ? 'closed' : null;
   const mode = forced ?? (session === 'Regular' ? 'open' : 'closed');
-  console.log(`rpc ${rpcHost()}  chain clock ${clock} (${new Date(clock * 1000).toISOString()})  session ${session}  mode ${mode}`);
+  console.log(
+    `rpc ${rpcHost()}  chain clock ${clock} (${new Date(clock * 1000).toISOString()})  session ${session}  mode ${mode}  calendar ${id} ${calendarPda(id).toBase58()}`,
+  );
 
   const before = await readSecurity(conn, mint);
   let result: Record<string, unknown>;
   if (mode === 'open') {
-    result = await inSession(conn, payer, mint);
+    result = await inSession(conn, payer, mint, id);
   } else {
-    const probes = (d.probes as { priceUpdateAccount?: string }[] | undefined) ?? [];
-    const last = [...probes].reverse().find((p) => p.priceUpdateAccount)?.priceUpdateAccount;
-    result = await closedSession(conn, payer, mint, new PublicKey(last ?? mint.toBase58()));
+    result = await closedSession(conn, payer, mint, id, new PublicKey(lastPriceUpdate(d) ?? mint.toBase58()));
   }
 
   const after = await readSecurity(conn, mint);
   console.log(`\nSecurityState ${securityPda(mint).toBase58()}`);
   console.log(`  refusals ${before.refusals} -> ${after.refusals}`);
+  if (after.refusals !== before.refusals + 1) {
+    console.log('  WARNING: the refusal counter did not move by one. Read the account before trusting this probe.');
+  }
+  const ts = Number(after.lastRefusalTs);
+  if (!Number.isSafeInteger(ts) || Math.abs(ts - clock) > 600) {
+    console.log(`  WARNING: last_refusal_ts ${after.lastRefusalTs} is not a plausible timestamp near the chain clock ${clock}.`);
+  }
   console.log(`  last_refusal_code ${after.lastRefusalCode} (${REFUSAL_NAMES[after.lastRefusalCode] ?? 'none'})  last_refusal_ts ${after.lastRefusalTs}`);
   console.log(
     `  primary: price ${fmtFixed(after.primary.price, after.primary.expo)} conf ${fmtFixed(after.primary.conf, after.primary.expo)} publish_ts ${after.primary.publishTs}  synced_ts ${after.syncedTs}`,
@@ -270,8 +294,18 @@ async function main() {
   const probes = (record.probes as unknown[] | undefined) ?? [];
   probes.push({
     ...result,
+    // `--open` outside a session still posts and syncs a real update; the gate
+    // refuses on the calendar before reading it. That is a different artifact
+    // from an in-session probe and is not labelled as one.
+    mode: mode === 'open' && session !== 'Regular' ? 'open-forced' : mode,
+    // Which binary decided this, as the record names it. A probe is only
+    // evidence about the build that was on chain when it ran.
+    build: (record.deploy as { soSha256?: string } | undefined)?.soSha256 ?? null,
+    calendarId: id,
+    security: securityPda(mint).toBase58(),
     session,
     chainClock: clock,
+    refusalsBefore: before.refusals,
     refusalsAfter: after.refusals,
     lastRefusalCode: after.lastRefusalCode,
     lastRefusalTs: after.lastRefusalTs.toString(),
