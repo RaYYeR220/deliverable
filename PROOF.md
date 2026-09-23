@@ -331,17 +331,22 @@ refused with code 1 — the committed calendar decides before any oracle is read
 ordering `gate::check_actionable` implements. It demonstrates that ordering. It is not a substitute
 for an in-session probe and it does not produce code 9.
 
-**Not yet run: an in-session probe on the post-audit build.** The only `SingleSource` (9) refusal on
-record is probe 1, from the pre-audit build and against the superseded SecurityState. Reproducing it
-needs a regular session — 13:30 to 20:00 UTC on a weekday the committed calendar does not mark
-closed — and the market was already shut when the accounts were recreated. The exact command is:
+**Probe 5, in session, on the post-audit build.** Run on 2026-09-23 at 16:45 UTC, inside a
+regular session. Hermes gave `Equity.US.AAPL/USD` at **336.64000 ± 0.04500** — a confidence band of
+1.34 bps against a 100 bps bound — published the same second. It was posted through the receiver
+with full Wormhole guardian verification into `7vxvGgF5cyFH13f4X1uWf4gt3NJXYvpTQiE8YUdbCSY8`
+([VAA](https://explorer.solana.com/tx/vHH6tobzVpX1VczbZm5KESDknyStTyfU84owttYXMCY6nyBYGMG79nFkUH3Bqd3TQrL5cJwnQjw52EYvQSn3S3B?cluster=devnet)), and `sync_security` recorded it in the
+same transaction as the probe
+([`3irCAQjp…uLXZY`](https://explorer.solana.com/tx/3irCAQjppSiaTrAWYaNFmapvvLdQnB2N4nMFH6J7rQr23LaVcB1qSf6FeYu6Yk1FUiVPqyH9bu6Yc2t7jtuuLXZY?cluster=devnet)).
 
-```bash
-cd scripts/devnet && pnpm run probe:open
-```
+The staleness check passed on a price zero seconds old. The confidence check passed at 1.34 bps.
+The gate refused anyway, with **code 9 `SingleSource`**: devnet has no second, independently
+sourced price for AAPL, and one number nothing can contradict is not a price. `SecurityState`
+went from 2 refusals to 3, `last_refusal_code` 9, `last_refusal_ts` 1790181942.
 
-It is listed in `deployment.json` under `probesPending` with its expected code, so the gap sits in
-the record and not only in this paragraph.
+All three codes the devnet deployment can produce are now on record against the current build:
+1 from the calendar with no oracle read, 1 with a fresh oracle posted and still not read, and 9
+after both oracle checks passed.
 
 Recreating the accounts and sending probes 3 and 4 cost 0.014066260 SOL (wallet 8.842865767, then
 8.828799507). No mainnet transaction was sent.
