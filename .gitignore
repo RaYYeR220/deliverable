@@ -30,12 +30,9 @@ Thumbs.db
 
 # local validator / fork state
 .surfpool/
-test-ledger/
 .tmp/
 
 # deployment link
-.vercel
-
 .vercel
 
 # python
