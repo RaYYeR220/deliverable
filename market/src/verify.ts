@@ -106,8 +106,11 @@ export async function verifySeries(
   const badge = deriveTokenBadgeAddress(config.quoteMint);
   const badgeInfo = await connection.getAccountInfo(badge);
   if (badgeInfo) {
-    const badgeState = await client.state.getTokenBadge(badge);
-    checker.eq("token badge -> quote mint", config.quoteMint, badgeState?.tokenMint ?? null);
+    // Read the mint out of the account rather than through the SDK's decoder,
+    // which returns null for this account. TokenBadge is an 8-byte Anchor
+    // discriminator followed by the mint it makes eligible.
+    const badgeMint = new PublicKey(badgeInfo.data.subarray(8, 40));
+    checker.eq("token badge -> quote mint", config.quoteMint, badgeMint);
     checker.assert("token badge owner", badgeInfo.owner.equals(DYNAMIC_BONDING_CURVE_PROGRAM_ID), badgeInfo.owner.toBase58());
   } else {
     checker.assert(

@@ -1,6 +1,6 @@
 ---
 name: Deliverable rail — tokenised-equity actionability
-description: Ask whether a tokenised US equity can be acted on right now, read a strike that survives corporate actions, and handle each of the nine refusal codes. For any agent that touches xStocks, not only this venue's.
+description: Ask whether a tokenised US equity can be acted on right now, read a strike that survives corporate actions, and handle each of the eleven refusal codes. For any agent that touches xStocks, not only this venue's.
 ---
 
 # Deliverable rail
@@ -116,14 +116,20 @@ indexers. Correctness comes from reading the mint, not from being told.
 
 ---
 
-## 4. The nine refusal codes, and what to do about each
+## 4. The eleven refusal codes, and what to do about each
 
 Every refusal is a typed code, emitted as an on-chain `Refused` event and written onto
-`SecurityState.last_refusal_code`. The failure is the artifact. `errorCode = 6000 + code - 1`
-is the Anchor error the instruction fails with, so a failed transaction maps back to a
-refusal with `refusalFromErrorCode`.
+`SecurityState.last_refusal_code`. The failure is the artifact. Map a failed transaction
+back to a refusal with `refusalFromErrorCode`, which is a lookup rather than arithmetic:
+`errorCode = 6000 + code - 1` holds for the first nine, and codes 10 and 11 were appended
+after the audit with their Anchor variants at the end of the enum, so they are 6033 and
+6034.
 
-They are **not** evaluated in numeric order. `gate.rs` checks the calendar first because
+The first nine are what the gate itself decides. Codes 10 and 11 are failures to *read*
+an input, recorded by `probe_security`, which stays total so the refusal ledger can count
+a feed that has stopped publishing.
+
+The nine are **not** evaluated in numeric order. `gate.rs` checks the calendar first because
 it is the cheapest check and it holds for most of the week, then the issuer levers, and
 only then reads an oracle:
 
@@ -143,6 +149,8 @@ MarketClosed -> Halted -> IssuerPaused -> HookAttached -> MultiplierPending
 | 7 | `HookAttached` | The mint's `transferHook.programId` is no longer empty. | **Stop permanently until a human reviews it.** Every xStock ships an initialised-but-empty transfer hook whose authority is live. A non-null program id means arbitrary code now runs inside every transfer of the collateral. |
 | 8 | `SourcesDisagree` | The two independent sources the security is bound to disagree by more than `maxDivergenceBps`. | **Do not pick the one you like.** Disagreement is the only signal that either of them is wrong, and choosing between them discards it. Wait for convergence. |
 | 9 | `SingleSource` | The security is registered against one price source and nothing corroborates it. | **Treat the security as unpriced.** One number that nothing can contradict is not a price. The fix is registration-side: bind a second, independent source. |
+| 10 | `OracleUnreadable` | A bound price account could not be read at all: an unpublished Scope entry, an account that is not the one this security is bound to, or an update past its own outer age bound. Distinct from `OracleStale`, which is a price you could read and would not act on. | **Do not substitute another account.** The binding names one account; a different one that decodes is not the same feed. Recorded by `probe_security` rather than thrown, so a feed that has stopped publishing shows up in the refusal count instead of vanishing. |
+| 11 | `MultiplierUnreadable` | The mint's `ScaledUiAmount` multiplier could not be read or decoded, so there is no defensible re-cut of the strike. | **Do not assume 1.0.** A multiplier you cannot read is not a multiplier of one; every strike on the name depends on it. Treat the security as unpriceable until the mint decodes. |
 
 There is one more thing that is not a gate code. `Registry.paused` is a kill switch:
 `write` and `exercise` fail with `RegistryPaused` whatever the gate says.
@@ -187,8 +195,8 @@ await d.describeSeries(address);        // + adjusted strike + phase
 
 **Honest limits, because an agent should not learn them the hard way.** The volatility is
 a parameter someone typed, not a calibrated surface: no skew, no term structure. The
-curve is struck once and does not re-mark as spot moves. The program is on devnet; the
-series pools are not on mainnet yet. Covered calls only, European exercise, no liquidation
+curve is struck once and does not re-mark as spot moves. The series pool is on mainnet but
+the program is on devnet. Covered calls only, European exercise, no liquidation
 engine, and no compliance gate — xStocks are bearer tokens with off-chain eligibility.
 
 ---

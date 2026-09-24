@@ -10,8 +10,8 @@
  *
  * The two are separate on purpose and the report says which is which. The program holds
  * the collateral and the adjustment invariant; the DBC pool holds the price. A series is
- * only fully real when both exist, and today the program is on devnet and its series
- * pools are not on mainnet yet (see PROOF.md, "Deployments").
+ * only fully real when both exist, and today the DBC pool is on mainnet quoted in AAPLx
+ * while the program itself is on devnet (see PROOF.md, "Deployments").
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

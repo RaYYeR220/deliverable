@@ -159,10 +159,28 @@ The `swap2` buy: 25 contracts for 0.32912927 shares, an effective premium of
 0.01316517 shares per contract against an opening curve price of 0.01262378 —
 the inventory markup, working.
 
-### Mainnet — simulated against live state, nothing spent
+### Mainnet — live, series `AAPL261024C352`
 
-The real transaction, quoted in AAPLx `XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp`,
-simulated against mainnet with a funded third-party fee payer and no signatures:
+Same wallet, quoted in AAPLx `XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp`.
+
+| step | signature |
+|---|---|
+| `create_config` | `4wXsbwrrcE6kbdoKHtV5RMJLjjd6VTcx4Geb2b8S3AYCiXD3oAC9eBLGTHCUfwHFQUHupX6w9Gt2Fr59Ci8ZPVxL` |
+| `initialize_virtual_pool_with_token2022` | `AnqdpKJiRDt6tn8BeZZkriKFfhQfJCA7xXUZtGYybzJLwiR61CRGt3t2hNN3YYvPFjKDmbfHhJgzUXhdrqHUyas` |
+
+```
+config      EchvUNNPbXx6SmCgQdzb3xvzeZD5zJ5mewRuenY8PCLK
+pool        FVvcWRkQNAaAx3UYniGoL7sSU3AsT3FuR2iF4aqRpLhq
+series mint CbFSoWSnspZFF8z1v4xRMMugsMwChANV5w3U42GJbRyE
+quote mint  XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp   (AAPLx, the real one)
+token badge 8VeVZe3Zxfpax2qQUp7i68FCLspLYErm2FJChc5NDuVn
+```
+
+`pnpm run verify --mainnet --yes --series=AAPL261024C352` reads all of it back off
+the live cluster and passes **79 of 79** assertions.
+
+Before anything was signed, the same two transactions were simulated against
+mainnet with a funded third-party fee payer:
 
 ```
 === simulate create_config ===
@@ -181,6 +199,8 @@ And the negative control, the same transaction with `--no-badge`:
 ```
 
 Which is the whole point of the token badge, demonstrated rather than asserted.
+The badge for AAPLx already existed; a quote mint without one cannot be used, which
+is Meteora's own answer to the question of who may denominate a pool.
 
 ### Costs, measured not estimated
 
@@ -198,8 +218,8 @@ rent schedule (identical, because rent parameters are cluster-independent):
 | base fees, 2 tx x 2 signatures | | 20,000 | 0.00002 |
 | **measured total on devnet** | | **14,233,840** | **0.01423384** |
 
-A mainnet run costs the same 0.01423384 SOL plus whatever priority fee is
-needed at the time. Nothing else is required to *open* the market: DBC mints the
+The mainnet run above cost **0.01428464 SOL** — the predicted 0.01423384 plus
+50,800 lamports of priority fee. Wallet balance went 0.1 → 0.08571536. Nothing else is required to *open* the market: DBC mints the
 series token itself, so no xStocks are needed until someone buys. `poolCreationFee`
 is set to 0.
 

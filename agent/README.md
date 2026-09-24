@@ -246,9 +246,9 @@ without any of our code.
 - **The program is on devnet.** So `listSeries` against mainnet returns nothing, and the
   gate runs in `preview` basis: committed calendar, default tolerances, conventional
   Scope binding, and no halt attestation. The output labels every one of those.
-- **The series pools are not on mainnet.** The only DBC pool the report shows is the
-  devnet one in `market/artifacts/`, quoted in a stand-in mint because devnet has no
-  xStocks. It is labelled `[market-artifact/devnet]`.
+- **One series pool is on mainnet, one is on devnet.** Both come from
+  `market/artifacts/` and both are labelled with their cluster. The mainnet one is quoted
+  in AAPLx; the devnet one is quoted in a stand-in mint, because devnet has no xStocks.
 - **Re-pricing an open series uses the live mainnet spot** even when that series is the
   devnet artifact. That is a category mix, it is labelled, and it exists so there is a
   real series in the report rather than only hypothetical rungs.

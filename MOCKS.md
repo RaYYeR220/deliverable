@@ -8,7 +8,7 @@ This file draws the line. If something here is vague, treat that as a bug and op
   `Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh` — real Token-2022 mints with real supply, real
   holders and real `ScaledUiAmount` multipliers. The program, the SDK and every test use real mints
   only, and so does everything that reads or targets mainnet: the evidence files, the test fixtures
-  and the mainnet series flow, which quotes in AAPLx (simulated against live state, not yet sent).
+  and the live series pool, which is quoted in AAPLx itself.
 - **The oracle.** Kamino Scope `OraclePrices` `3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH`, owned
   by `HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ`. Kamino's xStocks market prices its AAPLx and
   NVDAx reserves from entries 317 and 332 of this account; we verified those two and claim no more.

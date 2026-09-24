@@ -19,11 +19,9 @@ evidence tier for each claim.
   state accounts created before it; they were replaced, and both the old and the new are listed in
   [the upgrade section](#devnet-the-program-upgrade-and-the-accounts-it-invalidated). Probes taken
   before the upgrade are labelled as belonging to the earlier build. It is **not** a verified build.
-- **The series pool is not on mainnet yet.** It is a Meteora DBC pool for one covered-call series,
-  quoted in AAPLx. Its two transactions have been simulated against live mainnet state and not sent
-  ([`market/README.md`](market/README.md), "Mainnet — simulated against live state"), so no mainnet
-  signature exists. The same flow runs end to end on devnet with a stand-in quote mint (see
-  [Devnet: the series market](#devnet-the-series-market-end-to-end) below).
+- **The series pool is on mainnet.** A Meteora Dynamic Bonding Curve for one covered-call series,
+  quoted in AAPLx, created 2026-09-24 for 0.01428464 SOL. All 79 of its verification checks pass
+  against the live cluster — see [the series market on mainnet](#mainnet-the-series-market) below.
 
 Check the program yourself:
 
@@ -61,6 +59,36 @@ position and takes 25% of the creator fee, and the payout wallet cannot be chang
 launch. What is ours is the agent, its skill document, and the decision to quote the pool in a
 tokenized share instead of SOL. This is a separate artifact from the option-series curve in
 [`market/`](market/), which is still simulated against mainnet and not sent.
+
+
+## Mainnet: the series market
+
+One covered-call series, `AAPL261024C352`, with its own Meteora Dynamic Bonding Curve **quoted in
+AAPLx**. Under that numeraire the curve's price *is* the premium in shares per contract, and the
+spot price cancels out of the option's value exactly, so no dollar oracle sits in the pricing path.
+
+| item | value |
+|---|---|
+| `create_config` | [`4wXsbwrr…8ZPVxL`](https://solscan.io/tx/4wXsbwrrcE6kbdoKHtV5RMJLjjd6VTcx4Geb2b8S3AYCiXD3oAC9eBLGTHCUfwHFQUHupX6w9Gt2Fr59Ci8ZPVxL) |
+| `initialize_virtual_pool_with_token2022` | [`AnqdpKJi…rqHUyas`](https://solscan.io/tx/AnqdpKJiRDt6tn8BeZZkriKFfhQfJCA7xXUZtGYybzJLwiR61CRGt3t2hNN3YYvPFjKDmbfHhJgzUXhdrqHUyas) |
+| config | [`EchvUNNP…Y8PCLK`](https://solscan.io/account/EchvUNNPbXx6SmCgQdzb3xvzeZD5zJ5mewRuenY8PCLK) |
+| virtual pool | [`FVvcWRkQ…qRpLhq`](https://solscan.io/account/FVvcWRkQNAaAx3UYniGoL7sSU3AsT3FuR2iF4aqRpLhq) — the canonical PDA of quote mint, base mint and config |
+| series mint | [`CbFSoWSn…GJbRyE`](https://solscan.io/token/CbFSoWSnspZFF8z1v4xRMMugsMwChANV5w3U42GJbRyE), 8 decimals |
+| quote mint | AAPLx `XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp`, via token badge `8VeVZe3Zxfpax2qQUp7i68FCLspLYErm2FJChc5NDuVn` |
+| cost, measured | 0.01428464 SOL — 0.00598408 for the config, 0.00830056 for the pool |
+
+```bash
+cd market && pnpm run verify --mainnet --yes --series=AAPL261024C352
+```
+
+reads all of it back from the chain and checks 79 things, including every one of the sixteen curve
+points by `sqrtPrice` and `liquidity`, that the curve is strictly increasing on chain, and that its
+top stays under the no-arbitrage ceiling — a call cannot be worth more than the share it is written
+on, which is a bound only this numeraire can express. **All 79 pass.**
+
+One of them failed at first: the badge check read `null`, because the SDK's `getTokenBadge` decoder
+returns nothing for that account. The chain was right and the checker was wrong — the badge's 168
+bytes carry the mint at offset 8, and it is AAPLx. The check now reads those bytes directly.
 
 
 ## The oracle

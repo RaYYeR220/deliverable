@@ -176,9 +176,15 @@ describe('every refusal the program can emit stops the wheel', () => {
     });
   }
 
-  it('covers all nine codes, in the order gate.rs evaluates them', () => {
+  it('covers every gate code, in the order gate.rs evaluates them', () => {
     expect(CASES.map((c) => c.name)).toEqual([...GATE_CHECK_ORDER]);
-    expect(new Set(CASES.map((c) => c.name)).size).toBe(Object.keys(RefusalCode).length);
+    expect(new Set(CASES.map((c) => c.name)).size).toBe(GATE_CHECK_ORDER.length);
+    // The gate decides nine of the eleven. The other two are failures to read an input,
+    // recorded by probe_security rather than returned by the gate, so they have no case
+    // here — but naming them keeps a newly appended refusal from landing in neither list.
+    const names = new Set<string>(Object.keys(RefusalCode));
+    for (const name of GATE_CHECK_ORDER) names.delete(name);
+    expect([...names].sort()).toEqual(['MultiplierUnreadable', 'OracleUnreadable']);
   });
 });
 
@@ -237,9 +243,13 @@ describe('a refusal cannot be worked around', () => {
 });
 
 describe('every code has guidance, and it is the same table the skill document publishes', () => {
-  it('nine codes, nine sentences', () => {
+  it('every code has a sentence, and no sentence has no code', () => {
     const codes = Object.values(RefusalCode);
-    expect(codes).toHaveLength(9);
+    // Not a hard-coded count: the assertion is that the two tables are the same set,
+    // so appending a refusal to the SDK fails here until the guidance is written.
+    expect(Object.keys(REFUSAL_GUIDANCE).map(Number).sort((a, b) => a - b)).toEqual(
+      [...codes].sort((a, b) => a - b),
+    );
     for (const code of codes) {
       expect(REFUSALS[code]).toBeDefined();
       expect(REFUSAL_GUIDANCE[code]).toBeTypeOf('string');

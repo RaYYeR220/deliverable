@@ -199,10 +199,20 @@ export async function buildProposals(
     const rung = request.rung;
     const expiryTs = BigInt(rung.expiryTs);
     const strike0 = strikeRaw(rung.strikeUsd, ctx.quoteDecimals);
-    const [series] = await findSeriesPda(
-      { underlyingMint: ctx.underlyingMint, expiryTs, strike0, kind: OptionKind.Call },
-      { programAddress: ctx.programAddress },
-    );
+    const rawSize = contractRawSize(rung.contractSize, ctx.underlyingDecimals, ctx.multiplierFixed);
+    // Every one of these is a seed of the series PDA, so all eight have to match the
+    // arguments `create_series` is given below exactly. Derive once, reuse.
+    const seeds = {
+      underlyingMint: ctx.underlyingMint,
+      quoteMint: ctx.quoteMint,
+      expiryTs,
+      strike0,
+      contractRawSize: rawSize,
+      settlementWindowMinutes: ctx.settlementWindowMinutes,
+      kind: OptionKind.Call,
+      adjustOnCorporateAction: true,
+    } as const;
+    const [series] = await findSeriesPda(seeds, { programAddress: ctx.programAddress });
 
     if (request.kind === 'create_series') {
       const [calendar] = await findCalendarPda({ id: ctx.calendarId }, { programAddress: ctx.programAddress });
@@ -215,12 +225,12 @@ export async function buildProposals(
           series,
           underlyingTokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
           quoteTokenProgram: ctx.quoteMint === DEFAULT_QUOTE_MINT ? TOKEN_PROGRAM_ADDRESS : TOKEN_2022_PROGRAM_ADDRESS,
-          expiryTs,
-          strike0,
-          kind: OptionKind.Call,
-          contractRawSize: contractRawSize(rung.contractSize, ctx.underlyingDecimals, ctx.multiplierFixed),
-          settlementWindowMinutes: ctx.settlementWindowMinutes,
-          adjustOnCorporateAction: true,
+          expiryTs: seeds.expiryTs,
+          strike0: seeds.strike0,
+          kind: seeds.kind,
+          contractRawSize: seeds.contractRawSize,
+          settlementWindowMinutes: seeds.settlementWindowMinutes,
+          adjustOnCorporateAction: seeds.adjustOnCorporateAction,
         },
         { programAddress: ctx.programAddress },
       );
@@ -230,7 +240,7 @@ export async function buildProposals(
         summary:
           `strike0 ${strike0} (${rung.strikeUsd} per adjusted share, ${ctx.quoteDecimals} quote decimals), ` +
           `expiry ${new Date(rung.expiryTs * 1000).toISOString()}, ` +
-          `contract_raw_size ${contractRawSize(rung.contractSize, ctx.underlyingDecimals, ctx.multiplierFixed)} ` +
+          `contract_raw_size ${rawSize} ` +
           `(= ${rung.contractSize} adjusted share at m1 ${(Number(ctx.multiplierFixed) / 1e12).toFixed(12)}), ` +
           'adjust_on_corporate_action true',
         instructions: [describe('create_series', ix as Instruction)],

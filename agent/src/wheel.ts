@@ -53,7 +53,9 @@ export const DEFAULT_WHEEL: WheelParameters = Object.freeze({
 
 /**
  * What an agent should do about each refusal. This table is the machine-readable half
- * of `SKILL.md`, and the two are the same nine sentences on purpose.
+ * of `SKILL.md`, and the two are the same eleven sentences on purpose. The type is
+ * keyed by every `RefusalCodeValue`, so a refusal added to the SDK fails the build here
+ * rather than returning `undefined` guidance at the point an agent needs it most.
  */
 export const REFUSAL_GUIDANCE: Readonly<Record<RefusalCodeValue, string>> = Object.freeze({
   [RefusalCode.MarketClosed]:
@@ -74,6 +76,10 @@ export const REFUSAL_GUIDANCE: Readonly<Record<RefusalCodeValue, string>> = Obje
     'Do not pick the one you like. Two independent sources disagreeing beyond the bound is the only signal either of them is wrong, and choosing between them discards it. Wait for them to converge.',
   [RefusalCode.SingleSource]:
     'Treat the security as unpriced. One number that nothing can contradict is not a price. The fix is registration-side: bind a second, independent source.',
+  [RefusalCode.OracleUnreadable]:
+    'Do not substitute another account. The binding names one account, and a different one that happens to decode is not the same feed. This is a failure to read rather than a price you would not act on, and probe_security records it so a feed that has stopped publishing shows up in the refusal count.',
+  [RefusalCode.MultiplierUnreadable]:
+    'Do not assume 1.0. A multiplier you cannot read is not a multiplier of one, and every strike on this name is cut by it. Treat the security as unpriceable until the mint decodes.',
 });
 
 export type SeriesRecommendation = 'hold' | 'roll' | 'settle' | 'unpriceable';
