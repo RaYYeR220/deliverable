@@ -33,6 +33,36 @@ cd scripts && DELIVERABLE_PROGRAM_ID=DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCa
 
 ---
 
+## Mainnet: the agent's token, quoted in a tokenized share
+
+`Wheelwright` is the covered-call wheel operator in [`agent/`](agent/). Its token was launched on
+2026-09-24 through ClawPump onto a **Meteora Dynamic Bonding Curve whose quote asset is AAPLx**, so
+the creator fees it earns accrue in Apple stock rather than in SOL.
+
+| item | value |
+|---|---|
+| launch transaction | [`4shA3n7N…gxDZzs`](https://solscan.io/tx/4shA3n7NHsHehmZHHibB5g6pc5Bqo23NYaed5eoPYXPvxGaGbcddc2dA4sZWFqjyCnKRscoF5CtdT69gx2gxDZzs) |
+| instruction | `InitializeVirtualPoolWithToken2022` on `dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN` |
+| token | `$WHEELW` [`AZzs6bCf…XKZgU`](https://solscan.io/token/AZzs6bCfgtLvYZriHX4Ay3Ag4VKwJwAXk2nzHWEXKZgU), 1,000,000,000 supply, 6 decimals |
+| virtual pool | [`7Y2JkBEJ…zsE5z`](https://solscan.io/account/7Y2JkBEJGMr7iRZHeg6Pnk9JBrxKBwY1b1jd5B3zsE5z) (424 bytes) |
+| pool config | [`BQRkTw4J…HBVgm`](https://solscan.io/account/BQRkTw4JPYp7Dnj6zawJ3q12Uj2YZBh4GLZoorSHBVgm) (1,048 bytes) |
+| quote token badge | [`8VeVZe3Z…NDuVn`](https://solscan.io/account/8VeVZe3Zxfpax2qQUp7i68FCLspLYErm2FJChc5NDuVn) — the badge that makes AAPLx eligible as a DBC quote mint |
+| quote vault | [`9wrCMWAy…L3jkH`](https://solscan.io/account/9wrCMWAyo1bfAN4q51j98PhGnHfrpuUE7g2ABmzL3jkH), holding **AAPLx** |
+| agent | <https://clawpump.tech/agent/d3dbfac2-ea62-44a7-8774-352df0a7492c> |
+
+Verified from the transaction rather than from the interface: the Meteora DBC program is present,
+the pump.fun program `6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P` is **not**, and AAPLx
+`XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp` is among the accounts. That distinction matters: the
+pump.fun path never touches a Meteora program, and most stock-paired launches on ClawPump in the
+week before this one took it.
+
+**Honest note.** The pool is ClawPump's product, not ours: it owns the permanently locked LP
+position and takes 25% of the creator fee, and the payout wallet cannot be changed after the first
+launch. What is ours is the agent, its skill document, and the decision to quote the pool in a
+tokenized share instead of SOL. This is a separate artifact from the option-series curve in
+[`market/`](market/), which is still simulated against mainnet and not sent.
+
+
 ## The oracle
 
 | item | account |
