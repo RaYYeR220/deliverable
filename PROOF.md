@@ -61,14 +61,24 @@ is 0.02117752 AAPLx rather than 0.02110852, because AAPLx carries a `ScaledUiAmo
 1.0032690125398187 — the same dividend accrual this program exists to keep strikes honest about, showing up
 in a fee vault.
 
-**Honest note, and the reason there is no claim transaction here.** The pool is ClawPump's product,
-not ours. On chain both `creator` and `feeClaimer` are ClawPump's own wallet
+**Where that fee goes, stated exactly, because the DBC config alone would mislead you.** On chain
+both `creator` and `feeClaimer` are ClawPump's own wallet
 [`Fo6sbUoT…aem4j`](https://solscan.io/account/Fo6sbUoTeArwsd2Zk5RyxAG8nWYTsLtWB4U5vwDaem4j), and the
-config sets `creatorTradingFeePercentage` to 0, so `creatorQuoteFee` is 0 and stays 0. We hold no
-authority that can claim any part of that 0.0211 AAPLx, and we are not going to show a claim we
-cannot sign. ClawPump also owns the permanently locked LP position, and the payout wallet cannot be
-changed after the first launch. What is ours is the agent, its skill document, and the decision to
-quote the pool in a tokenized share instead of SOL.
+config sets `creatorTradingFeePercentage` to 0. So `creatorQuoteFee` is 0 and stays 0, and the whole
+trading fee accrues on the partner side. Read only the config and you would conclude the launching
+side earns nothing.
+
+That conclusion would be wrong. The split is applied by ClawPump at distribution rather than by the
+curve: its launch console states `Agent / ClawPump 75% / 25%`, collected in AAPLx, with 0.016942
+AAPLx currently available to collect and a control that collects it, distribution being a separate
+transaction afterwards. The agent's own wallet is
+[`4FmPqTwr…NjYHgD`](https://solscan.io/account/4FmPqTwr1zJgaYd5YVXUbymWyrnjuYhC4B8RSmNjYHgD).
+Nothing has been collected or distributed yet, so `Agent earned` reads 0 AAPLx — we are recording
+the accrual, which is on chain and checkable, and not a payout that has not happened.
+
+The pool itself is ClawPump's product, not ours: it owns the permanently locked LP position and the
+payout wallet cannot be changed after the first launch. What is ours is the agent, its skill
+document, and the decision to quote the pool in a tokenized share instead of SOL.
 
 
 ## Mainnet: the series market

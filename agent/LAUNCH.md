@@ -183,15 +183,17 @@ Paste these four into the submission. They are the whole evidence chain.
 | 1 | `https://clawpump.tech/agent/d3dbfac2-ea62-44a7-8774-352df0a7492c` | the agent exists on Clawpump, with our custom skill attached |
 | 2 | `https://clawpump.tech/tokens/<mint>` | the token exists, paired with AAPLx, attached to that agent |
 | 3 | `https://solscan.io/tx/<signature>` | the Meteora DBC `InitializeVirtualPoolWithToken2022` transaction — "using clawpump **and** Meteora", on chain |
-| 4 | ~~`https://solscan.io/tx/<fee claim signature>`~~ | **not obtainable — see below** |
+| 4 | `https://solscan.io/tx/<fee collection signature>` | fees **denominated in AAPLx** leaving the pool — "agents earn on RWAs", with a receipt |
 
-**What link 4 turned out to be.** The pool traded and took 2,110,851 raw AAPLx in fees, which
-is the accrual this bounty is about and is readable off `quoteVault`
+**Where link 4 actually comes from.** Not from the DBC config, which would mislead you: ClawPump
+sets itself as both `creator` and `feeClaimer` and sets `creatorTradingFeePercentage` to 0, so
+`creatorQuoteFee` is 0 and the whole trading fee accrues on the **partner** side. The 75/25 split
+in the agent's favour is applied by ClawPump at distribution instead, and the control that does it
+is **Collect fees into ClawPump** under Token → Manage → Quote-token fees on the launch console.
+Collection and distribution are separate transactions and the connected wallet pays the network
+cost. The accrual itself is already evidence and needs no signature: 2,110,851 raw AAPLx readable
+off `quoteVault`
 [`9wrCMWAy…L3jkH`](https://solscan.io/account/9wrCMWAyo1bfAN4q51j98PhGnHfrpuUE7g2ABmzL3jkH).
-There is no claim transaction to link, because ClawPump sets **itself** as both `creator` and
-`feeClaimer` on the pool config and sets `creatorTradingFeePercentage` to 0. The launching
-wallet holds no authority over any of it. The accrual is the evidence; the claim is ClawPump's
-to make, and a screenshot of someone else's claim would not be ours either way.
 
 Read the earnings on the dashboard at
 <https://clawpump.tech/agent/d3dbfac2-ea62-44a7-8774-352df0a7492c>, not over the API:
@@ -261,5 +263,5 @@ Stated plainly rather than guessed at.
 - **The creator-fee basis points on the Meteora path.** `pumpCreatorFeeBps` (100–300) is
   documented for the pump.fun path only. Whether DBC exposes an equivalent is unknown.
 - **Fee accrual in AAPLx.** Observed, and it is real: `partnerQuoteFee` 1,688,682 and
-  `protocolQuoteFee` 422,169, both denominated in AAPLx. What was wrong in the pre-launch
-  version of this note is who receives it — see the evidence table above.
+  `protocolQuoteFee` 422,169, both denominated in AAPLx. The pre-launch guess at which
+  config field carries the agent's share was wrong — it is none of them. See above.
