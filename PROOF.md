@@ -47,6 +47,7 @@ every fee the pool takes accrues in Apple stock rather than in SOL.
 | quote token badge | [`8VeVZe3Z…NDuVn`](https://solscan.io/account/8VeVZe3Zxfpax2qQUp7i68FCLspLYErm2FJChc5NDuVn) — the badge that makes AAPLx eligible as a DBC quote mint |
 | quote vault | [`9wrCMWAy…L3jkH`](https://solscan.io/account/9wrCMWAyo1bfAN4q51j98PhGnHfrpuUE7g2ABmzL3jkH), holding **AAPLx** |
 | fees taken, in AAPLx | 2,110,851 raw — 1,688,682 partner + 422,169 protocol |
+| fee claim, in AAPLx | [`4XG6xiT5…8Z7wQd`](https://solscan.io/tx/4XG6xiT5Nh7hc9pSAAzsEThWG2dEGUDeVf5RQzFwLrtQtPde447e7qLe1UT8dDsqXVHt7GrB3Kn8U3dcA8Z7wQd) — `ClaimTradingFee`, 1,688,682 raw AAPLx out of the pool |
 | agent | <https://clawpump.tech/agent/d3dbfac2-ea62-44a7-8774-352df0a7492c> |
 
 Verified from the transaction rather than from the interface: the Meteora DBC program is present,
@@ -73,8 +74,20 @@ curve: its launch console states `Agent / ClawPump 75% / 25%`, collected in AAPL
 AAPLx currently available to collect and a control that collects it, distribution being a separate
 transaction afterwards. The agent's own wallet is
 [`4FmPqTwr…NjYHgD`](https://solscan.io/account/4FmPqTwr1zJgaYd5YVXUbymWyrnjuYhC4B8RSmNjYHgD).
-Nothing has been collected or distributed yet, so `Agent earned` reads 0 AAPLx — we are recording
-the accrual, which is on chain and checkable, and not a payout that has not happened.
+**The collection happened.** Transaction
+[`4XG6xiT5…8Z7wQd`](https://solscan.io/tx/4XG6xiT5Nh7hc9pSAAzsEThWG2dEGUDeVf5RQzFwLrtQtPde447e7qLe1UT8dDsqXVHt7GrB3Kn8U3dcA8Z7wQd), signed by
+[`4aayLVco…48Xeem`](https://solscan.io/account/4aayLVcoASwgYXD5qYLEt44qbN1a46qDYf8jfb48Xeem) and
+costing 18,000 lamports, runs `ClaimTradingFee` on the Meteora DBC program and moves **1,688,682 raw
+AAPLx** — the whole partner balance — out of the pool's quote vault into ClawPump's token account
+[`oGNKoxSC…o8gyw`](https://solscan.io/account/oGNKoxSCeio6MuHWAPG8dVPiTdZ2X6wUYqtS66o8gyw). The vault
+now holds 422,170 raw: the protocol fee plus one lamport of reserve. An agent's revenue, denominated
+in Apple stock, with a signature rather than a screenshot. Distribution of the agent's 75% is a
+separate transaction and has not been made, so we claim the collection and not the payout.
+
+The transaction's own logs carry a limit we already disclose, stated by the token program rather
+than by us: `Warning: Mint has a permanent delegate, so tokens in this account may be seized at any
+time`. AAPLx does carry `PermanentDelegate`, the issuer holds it, and no on-chain program can
+prevent a seizure — which is why it is in MOCKS.md under what a third party cannot defend against.
 
 The pool itself is ClawPump's product, not ours: it owns the permanently locked LP position and the
 payout wallet cannot be changed after the first launch. What is ours is the agent, its skill

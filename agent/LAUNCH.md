@@ -183,7 +183,7 @@ Paste these four into the submission. They are the whole evidence chain.
 | 1 | `https://clawpump.tech/agent/d3dbfac2-ea62-44a7-8774-352df0a7492c` | the agent exists on Clawpump, with our custom skill attached |
 | 2 | `https://clawpump.tech/tokens/<mint>` | the token exists, paired with AAPLx, attached to that agent |
 | 3 | `https://solscan.io/tx/<signature>` | the Meteora DBC `InitializeVirtualPoolWithToken2022` transaction — "using clawpump **and** Meteora", on chain |
-| 4 | `https://solscan.io/tx/<fee collection signature>` | fees **denominated in AAPLx** leaving the pool — "agents earn on RWAs", with a receipt |
+| 4 | [`4XG6xiT5…8Z7wQd`](https://solscan.io/tx/4XG6xiT5Nh7hc9pSAAzsEThWG2dEGUDeVf5RQzFwLrtQtPde447e7qLe1UT8dDsqXVHt7GrB3Kn8U3dcA8Z7wQd) | `ClaimTradingFee` moving 1,688,682 raw **AAPLx** out of the pool — "agents earn on RWAs", with a receipt |
 
 **Where link 4 actually comes from.** Not from the DBC config, which would mislead you: ClawPump
 sets itself as both `creator` and `feeClaimer` and sets `creatorTradingFeePercentage` to 0, so
@@ -191,7 +191,7 @@ sets itself as both `creator` and `feeClaimer` and sets `creatorTradingFeePercen
 in the agent's favour is applied by ClawPump at distribution instead, and the control that does it
 is **Collect fees into ClawPump** under Token → Manage → Quote-token fees on the launch console.
 Collection and distribution are separate transactions and the connected wallet pays the network
-cost. The accrual itself is already evidence and needs no signature: 2,110,851 raw AAPLx readable
+cost. The accrual itself was already evidence before any signature: 2,110,851 raw AAPLx readable
 off `quoteVault`
 [`9wrCMWAy…L3jkH`](https://solscan.io/account/9wrCMWAyo1bfAN4q51j98PhGnHfrpuUE7g2ABmzL3jkH).
 
