@@ -35,7 +35,7 @@ cd scripts && DELIVERABLE_PROGRAM_ID=DnLxRcayAcjUFFuLjobQmJ7K75EgDRGFkUj5tfWcMCa
 
 `Wheelwright` is the covered-call wheel operator in [`agent/`](agent/). Its token was launched on
 2026-09-24 through ClawPump onto a **Meteora Dynamic Bonding Curve whose quote asset is AAPLx**, so
-the creator fees it earns accrue in Apple stock rather than in SOL.
+every fee the pool takes accrues in Apple stock rather than in SOL.
 
 | item | value |
 |---|---|
@@ -46,6 +46,7 @@ the creator fees it earns accrue in Apple stock rather than in SOL.
 | pool config | [`BQRkTw4J…HBVgm`](https://solscan.io/account/BQRkTw4JPYp7Dnj6zawJ3q12Uj2YZBh4GLZoorSHBVgm) (1,048 bytes) |
 | quote token badge | [`8VeVZe3Z…NDuVn`](https://solscan.io/account/8VeVZe3Zxfpax2qQUp7i68FCLspLYErm2FJChc5NDuVn) — the badge that makes AAPLx eligible as a DBC quote mint |
 | quote vault | [`9wrCMWAy…L3jkH`](https://solscan.io/account/9wrCMWAyo1bfAN4q51j98PhGnHfrpuUE7g2ABmzL3jkH), holding **AAPLx** |
+| fees taken, in AAPLx | 2,110,851 raw — 1,688,682 partner + 422,169 protocol |
 | agent | <https://clawpump.tech/agent/d3dbfac2-ea62-44a7-8774-352df0a7492c> |
 
 Verified from the transaction rather than from the interface: the Meteora DBC program is present,
@@ -54,11 +55,20 @@ the pump.fun program `6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P` is **not**, a
 pump.fun path never touches a Meteora program, and most stock-paired launches on ClawPump in the
 week before this one took it.
 
-**Honest note.** The pool is ClawPump's product, not ours: it owns the permanently locked LP
-position and takes 25% of the creator fee, and the payout wallet cannot be changed after the first
-launch. What is ours is the agent, its skill document, and the decision to quote the pool in a
-tokenized share instead of SOL. This is a separate artifact from the option-series curve in
-[`market/`](market/), which is still simulated against mainnet and not sent.
+The pool has traded, and its fees are denominated in a share. `quoteVault` holds 2,110,852 raw
+AAPLx: 1,688,682 of partner fee, 422,169 of protocol fee, and 1 of reserve. Its *displayed* balance
+is 0.02117752 AAPLx rather than 0.02110852, because AAPLx carries a `ScaledUiAmount` multiplier of
+1.0032690125398187 — the same dividend accrual this program exists to keep strikes honest about, showing up
+in a fee vault.
+
+**Honest note, and the reason there is no claim transaction here.** The pool is ClawPump's product,
+not ours. On chain both `creator` and `feeClaimer` are ClawPump's own wallet
+[`Fo6sbUoT…aem4j`](https://solscan.io/account/Fo6sbUoTeArwsd2Zk5RyxAG8nWYTsLtWB4U5vwDaem4j), and the
+config sets `creatorTradingFeePercentage` to 0, so `creatorQuoteFee` is 0 and stays 0. We hold no
+authority that can claim any part of that 0.0211 AAPLx, and we are not going to show a claim we
+cannot sign. ClawPump also owns the permanently locked LP position, and the payout wallet cannot be
+changed after the first launch. What is ours is the agent, its skill document, and the decision to
+quote the pool in a tokenized share instead of SOL.
 
 
 ## Mainnet: the series market

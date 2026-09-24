@@ -183,11 +183,15 @@ Paste these four into the submission. They are the whole evidence chain.
 | 1 | `https://clawpump.tech/agent/d3dbfac2-ea62-44a7-8774-352df0a7492c` | the agent exists on Clawpump, with our custom skill attached |
 | 2 | `https://clawpump.tech/tokens/<mint>` | the token exists, paired with AAPLx, attached to that agent |
 | 3 | `https://solscan.io/tx/<signature>` | the Meteora DBC `InitializeVirtualPoolWithToken2022` transaction — "using clawpump **and** Meteora", on chain |
-| 4 | `https://solscan.io/tx/<fee claim signature>` | a creator-fee claim **denominated in AAPLx** — "agents earn on RWAs", with a receipt |
+| 4 | ~~`https://solscan.io/tx/<fee claim signature>`~~ | **not obtainable — see below** |
 
-Link 4 needs trades to have happened first. Get it by letting the pool trade (or buying a
-small amount yourself), then claiming fees from the agent's dashboard page. The claim
-transaction must show an **AAPLx** token balance increase, not a SOL one.
+**What link 4 turned out to be.** The pool traded and took 2,110,851 raw AAPLx in fees, which
+is the accrual this bounty is about and is readable off `quoteVault`
+[`9wrCMWAy…L3jkH`](https://solscan.io/account/9wrCMWAyo1bfAN4q51j98PhGnHfrpuUE7g2ABmzL3jkH).
+There is no claim transaction to link, because ClawPump sets **itself** as both `creator` and
+`feeClaimer` on the pool config and sets `creatorTradingFeePercentage` to 0. The launching
+wallet holds no authority over any of it. The accrual is the evidence; the claim is ClawPump's
+to make, and a screenshot of someone else's claim would not be ours either way.
 
 Read the earnings on the dashboard at
 <https://clawpump.tech/agent/d3dbfac2-ea62-44a7-8774-352df0a7492c>, not over the API:
@@ -256,7 +260,6 @@ Stated plainly rather than guessed at.
   on screen may differ.
 - **The creator-fee basis points on the Meteora path.** `pumpCreatorFeeBps` (100–300) is
   documented for the pump.fun path only. Whether DBC exposes an equivalent is unknown.
-- **Fee accrual in AAPLx.** Clawpump states creator fees accrue in the paired asset and
-  the `market/` curve is configured the same way (`collectFeeMode: QuoteToken`). Neither
-  has been observed for this token, because this token does not exist yet. Link 4 is what
-  turns that from a claim into a receipt.
+- **Fee accrual in AAPLx.** Observed, and it is real: `partnerQuoteFee` 1,688,682 and
+  `protocolQuoteFee` 422,169, both denominated in AAPLx. What was wrong in the pre-launch
+  version of this note is who receives it — see the evidence table above.
