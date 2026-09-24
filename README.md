@@ -167,6 +167,13 @@ Two things, in one program.
 
 **The venue** writes European, physically-settled covered calls against that rail.
 
+Each series gets a Meteora Dynamic Bonding Curve **quoted in the underlying xStock**, which makes
+the curve's price the premium in shares per contract and cancels spot out of Black-Scholes exactly —
+no dollar oracle in the pricing path. One is live on mainnet:
+[`FVvcWRkQ…qRpLhq`](https://solscan.io/account/FVvcWRkQNAaAx3UYniGoL7sSU3AsT3FuR2iF4aqRpLhq),
+AAPL 2026-10-24 352 call quoted in AAPLx, 79 of 79 verification checks passing against the live
+cluster ([PROOF.md](PROOF.md#mainnet-the-series-market)).
+
 ---
 
 ## The two mechanisms
